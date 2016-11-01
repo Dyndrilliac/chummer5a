@@ -1,4 +1,4 @@
-/*  This file is part of Chummer5a.
+﻿/*  This file is part of Chummer5a.
  *
  *  Chummer5a is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,13 +16,14 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
-﻿using System;
+ using System;
 using System.Data;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using System.Xml;
 using System.Xml.XPath;
+ using Chummer.Backend.Equipment;
 
 namespace Chummer
 {
@@ -39,13 +40,13 @@ namespace Chummer
 
 		private List<ListItem> _lstCategory = new List<ListItem>();
 		private int _intRating;
+		private bool _blnBlackMarketDiscount;
 
 		#region Control Events
 		public frmSelectArmor(Character objCharacter, bool blnCareer = false)
 		{
 			InitializeComponent();
 			LanguageManager.Instance.Load(GlobalOptions.Instance.Language, this);
-			chkFreeItem.Visible = blnCareer;
 			lblMarkupLabel.Visible = blnCareer;
 			nudMarkup.Visible = blnCareer;
 			lblMarkupPercentLabel.Visible = blnCareer;
@@ -123,7 +124,8 @@ namespace Chummer
 			// Create the Armor so we can show its Total Avail (some Armor includes Chemical Seal which adds +6 which wouldn't be factored in properly otherwise).
 			Armor objArmor = new Armor(_objCharacter);
 			TreeNode objNode = new TreeNode();
-			objArmor.Create(objXmlArmor, objNode, null, 0, true);
+			List<Weapon> objWeapons = new List<Weapon>();
+			objArmor.Create(objXmlArmor, objNode, null, 0, objWeapons, true);
 
 			lblArmor.Text = objXmlArmor["name"].InnerText;
             lblArmorValue.Text = objXmlArmor["armor"].InnerText;
@@ -356,7 +358,8 @@ namespace Chummer
                 {
                     TreeNode objNode = new TreeNode();
                     Armor objArmor = new Armor(_objCharacter);
-                    objArmor.Create(objXmlArmor, objNode, null, 0, true, true);
+					List<Weapon> objWeapons = new List<Weapon>();
+					objArmor.Create(objXmlArmor, objNode, null, 0, objWeapons, true, true);
 
                     string strWeaponName = objArmor.Name;
                     int intArmor = objArmor.TotalArmor;
@@ -492,6 +495,17 @@ namespace Chummer
 		}
 
 		/// <summary>
+		/// Whether or not the selected Vehicle is used.
+		/// </summary>
+		public bool BlackMarketDiscount
+		{
+			get
+			{
+				return _blnBlackMarketDiscount;
+			}
+		}
+
+		/// <summary>
 		/// Armor that was selected in the dialogue.
 		/// </summary>
 		public string SelectedArmor
@@ -550,6 +564,7 @@ namespace Chummer
 				_strSelectedArmor = objNode["name"].InnerText;
 				_intMarkup = Convert.ToInt32(nudMarkup.Value);
 				_intRating = Convert.ToInt32(nudRating.Value);
+				_blnBlackMarketDiscount = chkBlackMarketDiscount.Checked;
 
 				this.DialogResult = DialogResult.OK;
 			}
@@ -608,7 +623,8 @@ namespace Chummer
             {
                 TreeNode objNode = new TreeNode();
                 Armor objArmor = new Armor(_objCharacter);
-                objArmor.Create(objXmlArmor, objNode, null, 0, true, true);
+				List<Weapon> objWeapons = new List<Weapon>();
+				objArmor.Create(objXmlArmor, objNode, null, 0, objWeapons, true, true);
 
                 string strWeaponName = objArmor.Name;
                 int intArmor = objArmor.TotalArmor;
@@ -647,7 +663,8 @@ namespace Chummer
 			// Create the Armor so we can show its Total Avail (some Armor includes Chemical Seal which adds +6 which wouldn't be factored in properly otherwise).
 			Armor objArmor = new Armor(_objCharacter);
 			TreeNode objNode = new TreeNode();
-			objArmor.Create(objXmlArmor, objNode, null, 0, true);
+			List<Weapon> objWeapons = new List<Weapon>();
+			objArmor.Create(objXmlArmor, objNode, null, 0, objWeapons, true);
 
 			// Check for a Variable Cost.
 			int intItemCost = 0;
@@ -679,13 +696,22 @@ namespace Chummer
 			{
 				XPathNavigator nav = _objXmlDocument.CreateNavigator();
 				XPathExpression xprCost = nav.Compile(objXmlArmor["cost"].InnerText.Replace("Rating", nudRating.Value.ToString()));
-				lblCost.Text = String.Format("{0:###,###,##0¥}", Convert.ToInt32((Convert.ToDouble(nav.Evaluate(xprCost), GlobalOptions.Instance.CultureInfo))));
-				intItemCost = Convert.ToInt32((Convert.ToDouble(nav.Evaluate(xprCost), GlobalOptions.Instance.CultureInfo)));
+				double dblCost = (Convert.ToDouble(nav.Evaluate(xprCost), GlobalOptions.Instance.CultureInfo));
+				if (chkBlackMarketDiscount.Checked)
+				{
+					dblCost = dblCost - (dblCost*0.90);
+				}
+				intItemCost = Convert.ToInt32(dblCost);
+				lblCost.Text = String.Format("{0:###,###,##0¥}", intItemCost);
 			}
 			else
 			{
 				double dblCost = Convert.ToDouble(objXmlArmor["cost"].InnerText, GlobalOptions.Instance.CultureInfo);
 				dblCost *= 1 + (Convert.ToDouble(nudMarkup.Value, GlobalOptions.Instance.CultureInfo) / 100.0);
+				if (chkBlackMarketDiscount.Checked)
+				{
+					dblCost = dblCost * 0.90;
+				}
 				lblCost.Text = String.Format("{0:###,###,##0¥}", dblCost);
 				intItemCost = Convert.ToInt32(dblCost);
 			}

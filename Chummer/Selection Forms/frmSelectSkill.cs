@@ -1,4 +1,4 @@
-/*  This file is part of Chummer5a.
+﻿/*  This file is part of Chummer5a.
  *
  *  Chummer5a is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,10 +16,12 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Xml;
+using Chummer.Skills;
+using System.Linq;
 
 namespace Chummer
 {
@@ -122,37 +124,39 @@ namespace Chummer
 				}
 
 				// Add in any Exotic Skills the character has.
-				foreach (Skill objSkill in _objCharacter.Skills)
+				foreach (Skill objSkill in _objCharacter.SkillsSection.Skills)
 				{
-					if (objSkill.ExoticSkill)
+					if (objSkill.IsExoticSkill)
 					{
-						bool blnAddSkill = true;
+						ExoticSkill objExoticSkill = objSkill as ExoticSkill;
+                        bool blnAddSkill = true;
 						if (_strForceSkill != "")
-							blnAddSkill = _strForceSkill == objSkill.Name + " (" + objSkill.Specialization + ")";
+							blnAddSkill = _strForceSkill == objExoticSkill.Name + " (" + objExoticSkill.Specific + ")";
 						else
 						{
 							if (_strIncludeCategory != "")
-								blnAddSkill = _strIncludeCategory == objSkill.SkillCategory;
+								blnAddSkill = _strIncludeCategory == objExoticSkill.SkillCategory;
 							else if (_strExcludeCategory != "")
-								blnAddSkill = !_strExcludeCategory.Contains(objSkill.SkillCategory);
+								blnAddSkill = !_strExcludeCategory.Contains(objExoticSkill.SkillCategory);
 							else if (_strIncludeSkillGroup != "")
-								blnAddSkill = _strIncludeSkillGroup == objSkill.SkillGroup;
+								blnAddSkill = _strIncludeSkillGroup == objExoticSkill.SkillGroup;
 							else if (_strExcludeSkillGroup != "")
-								blnAddSkill = _strExcludeSkillGroup != objSkill.SkillGroup;
+								blnAddSkill = _strExcludeSkillGroup != objExoticSkill.SkillGroup;
 							else if (_strLimitToSkill != "")
-								blnAddSkill = _strLimitToSkill.Contains(objSkill.Name);
+								blnAddSkill = _strLimitToSkill.Contains(objExoticSkill.Name);
 						}
 
 						if (blnAddSkill)
 						{
 							ListItem objItem = new ListItem();
-							objItem.Value = objSkill.Name + " (" + objSkill.Specialization + ")";
+							objItem.Value = objExoticSkill.Name + " (" + objExoticSkill.Specific + ")";
 							// Use the translated Exotic Skill name if available.
-							XmlNode objXmlSkill = _objXmlDocument.SelectSingleNode("/chummer/skills/skill[exotic = \"Yes\" and name = \"" + objSkill.Name + "\"]");
+							XmlNode objXmlSkill =
+								_objXmlDocument.SelectSingleNode("/chummer/skills/skill[exotic = \"Yes\" and name = \"" + objExoticSkill.Name + "\"]");
 							if (objXmlSkill["translate"] != null)
-								objItem.Name = objXmlSkill["translate"].InnerText + " (" + objSkill.Specialization + ")";
+								objItem.Name = objXmlSkill["translate"].InnerText + " (" + objExoticSkill.DisplaySpecialization + ")";
 							else
-								objItem.Name = objSkill.Name + " (" + objSkill.Specialization + ")";
+								objItem.Name = objExoticSkill.Name + " (" + objExoticSkill.DisplaySpecialization + ")";
 							lstSkills.Add(objItem);
 						}
 					}
@@ -161,9 +165,9 @@ namespace Chummer
 			else
 			{
 				// Instead of showing all available Active Skills, show a list of Knowledge Skills that the character currently has.
-				foreach (Skill objKnow in _objCharacter.Skills)
+				foreach (Skill objKnow in _objCharacter.SkillsSection.Skills)
 				{
-					if (objKnow.KnowledgeSkill)
+					if (objKnow.IsKnowledgeSkill)
 					{
 						ListItem objSkill = new ListItem();
 						objSkill.Value = objKnow.Name;

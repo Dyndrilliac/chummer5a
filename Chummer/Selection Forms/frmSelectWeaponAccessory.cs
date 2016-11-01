@@ -38,13 +38,13 @@ namespace Chummer
 		private XmlDocument _objXmlDocument = new XmlDocument();
 		private readonly Character _objCharacter;
 		private int _intAccessoryMultiplier = 1;
+		private bool _blnBlackMarketDiscount;
 
 		#region Control Events
 		public frmSelectWeaponAccessory(Character objCharacter, bool blnCareer = false)
 		{
 			InitializeComponent();
 			LanguageManager.Instance.Load(GlobalOptions.Instance.Language, this);
-			chkFreeItem.Visible = blnCareer;
 			lblMarkupLabel.Visible = blnCareer;
 			nudMarkup.Visible = blnCareer;
 			lblMarkupPercentLabel.Visible = blnCareer;
@@ -332,6 +332,17 @@ namespace Chummer
 		}
 
 		/// <summary>
+		/// Whether or not the selected Vehicle is used.
+		/// </summary>
+		public bool BlackMarketDiscount
+		{
+			get
+			{
+				return _blnBlackMarketDiscount;
+			}
+		}
+
+		/// <summary>
 		/// Weapon's Accessory Cost Multiplier.
 		/// </summary>
 		public int AccessoryMultiplier
@@ -374,6 +385,7 @@ namespace Chummer
 			_strSelectedAccessory = lstAccessory.SelectedValue.ToString();
 			_intRating = Convert.ToInt32(nudRating.Value.ToString());
 			_intMarkup = Convert.ToInt32(nudMarkup.Value);
+			_blnBlackMarketDiscount = chkBlackMarketDiscount.Checked;
 			this.DialogResult = DialogResult.OK;
 		}
 

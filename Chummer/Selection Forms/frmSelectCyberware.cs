@@ -1,4 +1,4 @@
-/*  This file is part of Chummer5a.
+﻿/*  This file is part of Chummer5a.
  *
  *  Chummer5a is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,12 +16,14 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
-﻿using System;
+ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using System.Xml;
 using System.Xml.XPath;
+ using Chummer.Backend.Equipment;
+ using Chummer.Skills;
 
 namespace Chummer
 {
@@ -31,11 +33,13 @@ namespace Chummer
 		private Grade _objSelectedGrade;
 		private int _intSelectedRating = 0;
 		private readonly Character _objCharacter;
+        private Vehicle _objVehicle;
 		private int _intSelectedESSDiscount = 0;
 
         private double _dblCostMultiplier = 1.0;
         private double _dblESSMultiplier = 1.0;
-		private int _intAvailModifier = 0; 
+		private int _intAvailModifier = 0;
+		private int _intMarkup = 0;
 		private double _dblCharacterESSModifier = 1.0;
 		private double _dblGenetechCostModifier = 1.0;
 		private double _dblBasicBiowareESSModifier = 1.0;
@@ -52,6 +56,8 @@ namespace Chummer
 		private string _strNode = "cyberware";
 		private bool _blnAddAgain = false;
 		private bool _blnAllowModularPlugins = false;
+        private bool _blnShowOnlyLimbs = false;
+	    private bool _blnBlackMarketDiscount = false;
 		private static string _strSelectCategory = "";
 		private static string _strSelectedGrade = "";
 
@@ -60,6 +66,7 @@ namespace Chummer
 
 		private List<ListItem> _lstCategory = new List<ListItem>();
 		private List<ListItem> _lstGrade = new List<ListItem>();
+		
 
 		public enum Mode
 		{
@@ -73,6 +80,9 @@ namespace Chummer
             InitializeComponent();
 			LanguageManager.Instance.Load(GlobalOptions.Instance.Language, this);
 			chkFree.Visible = blnCareer;
+			lblMarkupLabel.Visible = blnCareer;
+			nudMarkup.Visible = blnCareer;
+			lblMarkupPercentLabel.Visible = blnCareer;
 			_blnCareer = blnCareer;
 			_objCharacter = objCharacter;
 			MoveControls();
@@ -111,6 +121,9 @@ namespace Chummer
 
 				if (objXmlCategory.Attributes["show"] != null)
 					blnAddItem = _blnAllowModularPlugins;
+
+			    if (_blnShowOnlyLimbs)
+			        blnAddItem = objXmlCategory.InnerText == "Cyberlimb";
 
 				if (blnAddItem)
 				{
@@ -277,11 +290,66 @@ namespace Chummer
 			if (objXmlCyberware.InnerXml.Contains("<rating>"))
 			{
 				nudRating.Enabled = true;
-				nudRating.Maximum = Convert.ToInt32(objXmlCyberware["rating"].InnerText);
+			    if (objXmlCyberware["rating"].InnerText == "MaximumSTR")
+			    {
+                    if (_objVehicle != null)
+                    {
+                        nudRating.Maximum = _objVehicle.TotalBody*2;
+	                    nudRating.Minimum = _objVehicle.TotalBody;
+                    }
+                    else
+                    {
+                        nudRating.Maximum = _objCharacter.STR.TotalMaximum;
+                    }
+                }
+                else if (objXmlCyberware["rating"].InnerText == "MaximumAGI")
+			    {
+                    if (_objVehicle != null)
+                    {
+                        nudRating.Maximum = _objVehicle.Pilot*2;
+                    }
+                    else
+                    {
+                        nudRating.Maximum = _objCharacter.AGI.TotalMaximum;
+                    }
+                }
+			    else
+			    {
+			        nudRating.Maximum = Convert.ToInt32(objXmlCyberware["rating"].InnerText);
+			    }
 				if (objXmlCyberware["minrating"] != null)
-					nudRating.Minimum = Convert.ToInt32(objXmlCyberware["minrating"].InnerText);
+				{
+					switch (objXmlCyberware["minrating"].InnerText)
+					{
+						case "MinimumAGI":
+							if (_objVehicle != null)
+							{
+								nudRating.Minimum = _objVehicle.Pilot;
+							}
+							else
+							{
+								nudRating.Minimum = 4;
+							}
+							break;
+						case "MinimumSTR":
+							if (_objVehicle != null)
+							{
+								nudRating.Minimum = _objVehicle.TotalBody;
+							}
+							else
+							{
+								nudRating.Minimum = 4;
+							}
+							break;
+						default:
+							nudRating.Minimum = Convert.ToInt32(objXmlCyberware["minrating"].InnerText);
+							break;
+					}
+				}
 				else
+				{
 					nudRating.Minimum = 1;
+				}
 			}
 			else
 			{
@@ -346,7 +414,18 @@ namespace Chummer
         private void nudRating_ValueChanged(object sender, EventArgs e)
         {
             UpdateCyberwareInfo();
-        }
+		}
+
+		private void lblSource_Click(object sender, EventArgs e)
+		{
+			CommonFunctions objCommon = new CommonFunctions(_objCharacter);
+			objCommon.OpenPDF(lblSource.Text);
+		}
+
+		private void nudMarkup_ValueChanged(object sender, EventArgs e)
+		{
+			UpdateCyberwareInfo();
+		}
 
 		private void cmdOK_Click(object sender, EventArgs e)
 		{
@@ -703,6 +782,17 @@ namespace Chummer
 		}
 
 		/// <summary>
+		/// Whether or not the selected Vehicle is used.
+		/// </summary>
+		public bool BlackMarketDiscount
+		{
+			get
+			{
+				return _blnBlackMarketDiscount;
+			}
+		}
+
+		/// <summary>
 		/// Whether or not the Bioware should be forced into the Genetech: Transgenics category.
 		/// </summary>
 		public bool ForceTransgenic
@@ -716,10 +806,49 @@ namespace Chummer
 					return false;
 			}
 		}
-		#endregion
 
-		#region Methods
-		/// <summary>
+        /// <summary>
+		/// Whether or not only Cyberlimb should be shown
+		/// </summary>
+		public bool ShowOnlyLimbs
+        {
+            set
+            {
+                _blnShowOnlyLimbs = value;
+            }
+        }
+
+        /// <summary>
+        /// Parent vehicle that the cyberlimb will be attached to.
+        /// </summary>
+        public Vehicle ParentVehicle
+        {
+            set
+            {
+                _objVehicle = value;
+            }
+            get
+            {
+                return _objVehicle;
+            }
+        }
+
+	    public int Markup
+	    {
+		    get
+		    {
+			    return _intMarkup;
+		    }
+		    set
+		    {
+			    _intMarkup = value;
+		    }
+	    }
+
+        #endregion
+
+        #region Methods
+        /// <summary>
         /// Update the Cyberware's information based on the Cyberware selected and current Rating.
         /// </summary>
         private void UpdateCyberwareInfo()
@@ -781,12 +910,55 @@ namespace Chummer
 				}
 				try
 				{
-					xprAvail = nav.Compile(strAvailExpr.Replace("Rating", nudRating.Value.ToString()));
+					if (strAvailExpr.Contains("MinRating"))
+					{
+						XmlNode xmlMinRatingNode = objXmlCyberware["minrating"];
+						if (xmlMinRatingNode != null)
+						{
+							switch (xmlMinRatingNode.InnerText)
+							{
+								case "MinimumAGI":
+									if (_objVehicle != null)
+									{
+										strAvailExpr = strAvailExpr.Replace("MinRating", 
+											_objVehicle.Pilot.ToString());
+									}
+									else
+									{
+										strAvailExpr = strAvailExpr.Replace("MinRating", 3.ToString());
+									}
+									break;
+								case "MinimumSTR":
+									if (_objVehicle != null)
+									{
+										strAvailExpr = strAvailExpr.Replace("MinRating",
+											_objVehicle.TotalBody.ToString());
+									}
+									else
+									{
+										strAvailExpr = strAvailExpr.Replace("MinRating", 3.ToString());
+									}
+									break;
+								default:
+									strAvailExpr = strAvailExpr.Replace("MinRating", 3.ToString());
+									break;
+							}
+						}
+					}
+					strAvailExpr = strAvailExpr.Replace("Rating", nudRating.Value.ToString());
+
+					string strPrefix = "";
+					if (strAvailExpr.StartsWith("+") || strAvailExpr.StartsWith("-"))
+					{
+						strPrefix = strAvailExpr.Substring(0, 1);
+						strAvailExpr = strAvailExpr.Substring(1, strAvailExpr.Length-1);
+					}
+					xprAvail = nav.Compile(strAvailExpr);
 					int intAvail = Convert.ToInt32(nav.Evaluate(xprAvail)) + _intAvailModifier;
 					// Avail cannot go below 0.
 					if (intAvail < 0)
 						intAvail = 0;
-					lblAvail.Text = intAvail.ToString() + strAvail;
+					lblAvail.Text = strPrefix + intAvail.ToString() + strAvail;
 				}
 				catch
 				{
@@ -864,9 +1036,45 @@ namespace Chummer
 				{
 					try
 					{
+						if (objXmlCyberware["cost"].InnerText.Contains("MinRating"))
+						{
+							XmlNode xmlMinRatingNode = objXmlCyberware["minrating"];
+							if (xmlMinRatingNode != null)
+							{
+								switch (xmlMinRatingNode.InnerText)
+								{
+									case "MinimumAGI":
+										if (_objVehicle != null)
+										{
+											objXmlCyberware["cost"].InnerText = objXmlCyberware["cost"].InnerText.Replace("MinRating",
+												_objVehicle.Pilot.ToString());
+										}
+										else
+										{
+											objXmlCyberware["cost"].InnerText = objXmlCyberware["cost"].InnerText.Replace("MinRating", 3.ToString());
+										}
+										break;
+									case "MinimumSTR":
+										if (_objVehicle != null)
+										{
+											objXmlCyberware["cost"].InnerText = objXmlCyberware["cost"].InnerText.Replace("MinRating",
+												_objVehicle.TotalBody.ToString());
+										}
+										else
+										{
+											objXmlCyberware["cost"].InnerText = objXmlCyberware["cost"].InnerText.Replace("MinRating", 3.ToString());
+										}
+										break;
+								}
+							}
+						}
 						XPathExpression xprCost = nav.Compile(objXmlCyberware["cost"].InnerText.Replace("Rating", nudRating.Value.ToString()));
-						lblCost.Text = String.Format("{0:###,###,##0¥}", Convert.ToInt32((Convert.ToDouble(nav.Evaluate(xprCost), GlobalOptions.Instance.CultureInfo) * _dblCostMultiplier * dblGenetechCostModifier)));
-						intItemCost = Convert.ToInt32((Convert.ToDouble(nav.Evaluate(xprCost), GlobalOptions.Instance.CultureInfo) * _dblCostMultiplier * dblGenetechCostModifier));
+						double dblCost = (Convert.ToDouble(nav.Evaluate(xprCost), GlobalOptions.Instance.CultureInfo)*_dblCostMultiplier*
+						           dblGenetechCostModifier);
+						dblCost *= 1 + (Convert.ToDouble(nudMarkup.Value, GlobalOptions.Instance.CultureInfo) / 100.0);
+						intItemCost = Convert.ToInt32(dblCost);
+						lblCost.Text = String.Format("{0:###,###,##0¥}", intItemCost);
+						
 					}
 					catch
 					{
@@ -899,12 +1107,21 @@ namespace Chummer
 					}
 				}
 
+				if (chkBlackMarketDiscount.Checked)
+				{
+					double dblDiscount = 0;
+					dblDiscount = intItemCost - (intItemCost * 0.90);
+					intItemCost -= Convert.ToInt32(dblDiscount);
+					lblCost.Text = String.Format("{0:###,###,##0¥}", intItemCost);
+				}
+
 				if (chkFree.Checked)
 				{
 					lblCost.Text = String.Format("{0:###,###,##0¥}", 0);
 					intItemCost = 0;
 				}
 
+				// Test required to find the item.
 				lblTest.Text = _objCharacter.AvailTest(intItemCost, lblAvail.Text);
 
 				// Essence.
@@ -1051,6 +1268,7 @@ namespace Chummer
 
 			_strSelectedGrade = _objSelectedGrade.ToString();
 			_intSelectedRating = Convert.ToInt32(nudRating.Value);
+			_blnBlackMarketDiscount = chkBlackMarketDiscount.Checked;
 
 			if (nudESSDiscount.Visible)
 				_intSelectedESSDiscount = Convert.ToInt32(nudESSDiscount.Value);
@@ -1085,18 +1303,17 @@ namespace Chummer
 
 					foreach (XmlNode objXmlForbidden in objXmlOneOfList)
 					{
-						if (objXmlForbidden.Name == "Cyberware")
+						switch (objXmlForbidden.Name)
 						{
-							// Run through all of the Cyberwares the character has and see if the current forbidden item exists.
-							// If so, turn on the RequirementForbidden flag so it cannot be selected.
-							foreach (Cyberware objCharacterCyberware in _objCharacter.Cyberware)
-							{
-								if (objCharacterCyberware.Name == objXmlForbidden.InnerText)
+							case "cyberware":
+								// Run through all of the Cyberwares the character has and see if the current forbidden item exists.
+								// If so, turn on the RequirementForbidden flag so it cannot be selected.
+								foreach (Cyberware objCharacterCyberware in _objCharacter.Cyberware.Where(objCharacterCyberware => objCharacterCyberware.Name == objXmlForbidden.InnerText))
 								{
 									blnRequirementForbidden = true;
 									strForbidden += "\n\t" + objCharacterCyberware.DisplayNameShort;
 								}
-							}
+								break;
 						}
 					}
 				}
@@ -1105,7 +1322,7 @@ namespace Chummer
 				if (blnRequirementForbidden)
 				{
 					if (blnShowMessage)
-						MessageBox.Show(LanguageManager.Instance.GetString("Message_SelectQuality_QualityRestriction") + strForbidden, LanguageManager.Instance.GetString("MessageTitle_SelectQuality_QualityRestriction"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+						MessageBox.Show(LanguageManager.Instance.GetString("Message_SelectCyberware_CyberwareRestriction") + strForbidden, LanguageManager.Instance.GetString("MessageTitle_SelectQuality_QualityRestriction"), MessageBoxButtons.OK, MessageBoxIcon.Information);
 					return false;
 				}
 			}
@@ -1124,208 +1341,219 @@ namespace Chummer
 					XmlNodeList objXmlOneOfList = objXmlOneOf.ChildNodes;
 					foreach (XmlNode objXmlRequired in objXmlOneOfList)
 					{
-						if (objXmlRequired.Name == "quality")
+						switch (objXmlRequired.Name)
 						{
-							XmlDocument _objQualityDocument = XmlManager.Instance.Load("qualities.xml");
-							// Run through all of the Qualities the character has and see if the current required item exists.
-							// If so, turn on the RequirementMet flag so it can be selected.
-							foreach (Quality objCharacterQuality in _objCharacter.Qualities)
-							{
-								if (objCharacterQuality.Name == objXmlRequired.InnerText)
-									blnOneOfMet = true;
-							}
-
-							if (!blnOneOfMet)
-							{
-								XmlNode objNode = _objQualityDocument.SelectSingleNode("/chummer/qualities/quality[name = \"" + objXmlRequired.InnerText + "\"]");
-								if (objNode["translate"] != null)
-									strThisRequirement += "\n\t" + objNode["translate"].InnerText;
-								else
-									strThisRequirement += "\n\t" + objXmlRequired.InnerText;
-							}
-						}
-						else if (objXmlRequired.Name == "metatype")
-						{
-							XmlDocument _objMetatypeDocument = XmlManager.Instance.Load("metatypes.xml");
-							// Check the Metatype requirement.
-							if (objXmlRequired.InnerText == _objCharacter.Metatype)
-								blnOneOfMet = true;
-							else
-							{
-								XmlNode objNode = _objMetatypeDocument.SelectSingleNode("/chummer/metatypes/metatype[name = \"" + objXmlRequired.InnerText + "\"]");
-								if (objNode["translate"] != null)
-									strThisRequirement += "\n\t" + objNode["translate"].InnerText;
-								else
-									strThisRequirement += "\n\t" + objXmlRequired.InnerText;
-							}
-						}
-						else if (objXmlRequired.Name == "metatypecategory")
-						{
-							// Check the Metatype Category requirement.
-							if (objXmlRequired.InnerText == _objCharacter.MetatypeCategory)
-								blnOneOfMet = true;
-							else
-							{
-								XmlNode objNode = _objMetatypeDocument.SelectSingleNode("/chummer/categories/category[. = \"" + objXmlRequired.InnerText + "\"]");
-								if (objNode.Attributes["translate"] != null)
-									strThisRequirement += "\n\t" + objNode.Attributes["translate"].InnerText;
-								else
-									strThisRequirement = "\n\t" + objXmlRequired.InnerText;
-							}
-						}
-						else if (objXmlRequired.Name == "metavariant")
-						{
-							// Check the Metavariant requirement.
-							if (objXmlRequired.InnerText == _objCharacter.Metavariant)
-								blnOneOfMet = true;
-							else
-							{
-								XmlNode objNode = _objMetatypeDocument.SelectSingleNode("/chummer/metatypes/metatype/metavariants/metavariant[name = \"" + objXmlRequired.InnerText + "\"]");
-								if (objNode["translate"] != null)
-									strThisRequirement += "\n\t" + objNode["translate"].InnerText;
-								else
-									strThisRequirement += "\n\t" + objXmlRequired.InnerText;
-							}
-						}
-						else if (objXmlRequired.Name == "power")
-						{
-							// Run through all of the Powers the character has and see if the current required item exists.
-							// If so, turn on the RequirementMet flag so it can be selected.
-							if (_objCharacter.AdeptEnabled && _objCharacter.Powers != null)
-							{
-								foreach (Power objCharacterPower in _objCharacter.Powers)
+							case "quality":
+								XmlDocument _objQualityDocument = XmlManager.Instance.Load("qualities.xml");
+								// Run through all of the Qualities the character has and see if the current required item exists.
+								// If so, turn on the RequirementMet flag so it can be selected.
+								foreach (Quality objCharacterQuality in _objCharacter.Qualities)
 								{
-									//Check that the power matches the name and doesn't come from a bonus source like a focus. There's probably an edge case that this will break.
-									if (objXmlRequired.InnerText == objCharacterPower.Name && objCharacterPower.BonusSource.Length == 0)
-									{
+									if (objCharacterQuality.Name == objXmlRequired.InnerText)
 										blnOneOfMet = true;
-									}
 								}
 
 								if (!blnOneOfMet)
 								{
-									strThisRequirement += "\n\t" + objXmlRequired.InnerText;
+									XmlNode objNode = _objQualityDocument.SelectSingleNode("/chummer/qualities/quality[name = \"" + objXmlRequired.InnerText + "\"]");
+									if (objNode["translate"] != null)
+										strThisRequirement += "\n\t" + objNode["translate"].InnerText;
+									else
+										strThisRequirement += "\n\t" + objXmlRequired.InnerText;
 								}
-							}
-						}
-						else if (objXmlRequired.Name == "inherited")
-						{
-							strThisRequirement += "\n\t" + LanguageManager.Instance.GetString("Message_SelectQuality_Inherit");
-						}
-						else if (objXmlRequired.Name == "careerkarma")
-						{
-							// Check Career Karma requirement.
-							if (_objCharacter.CareerKarma >= Convert.ToInt32(objXmlRequired.InnerText))
-								blnOneOfMet = true;
-							else
-								strThisRequirement = "\n\t" + LanguageManager.Instance.GetString("Message_SelectQuality_RequireKarma").Replace("{0}", objXmlRequired.InnerText);
-						}
-						else if (objXmlRequired.Name == "ess")
-						{
-							// Check Essence requirement.
-							if (objXmlRequired.InnerText.StartsWith("-"))
-							{
-								// Essence must be less than the value.
-								if (_objCharacter.Essence < Convert.ToDecimal(objXmlRequired.InnerText.Replace("-", string.Empty), GlobalOptions.Instance.CultureInfo))
+								break;
+							case "metatype":
+								XmlDocument _objMetatypeDocument = XmlManager.Instance.Load("metatypes.xml");
+								// Check the Metatype requirement.
+								if (objXmlRequired.InnerText == _objCharacter.Metatype)
 									blnOneOfMet = true;
-							}
-							else
-							{
-								// Essence must be equal to or greater than the value.
-								if (_objCharacter.Essence >= Convert.ToDecimal(objXmlRequired.InnerText, GlobalOptions.Instance.CultureInfo))
-									blnOneOfMet = true;
-							}
-
-						}
-						else if (objXmlRequired.Name == "skill")
-						{
-							// Check if the character has the required Skill.
-							foreach (Skill objSkill in _objCharacter.Skills)
-							{
-								if (objSkill.Name == objXmlRequired["name"].InnerText)
+								else
 								{
-									if (objSkill.Rating >= Convert.ToInt32(objXmlRequired["val"].InnerText))
-									{
-										blnOneOfMet = true;
-										break;
-									}
+									XmlNode objNode = _objMetatypeDocument.SelectSingleNode("/chummer/metatypes/metatype[name = \"" + objXmlRequired.InnerText + "\"]");
+									if (objNode["translate"] != null)
+										strThisRequirement += "\n\t" + objNode["translate"].InnerText;
+									else
+										strThisRequirement += "\n\t" + objXmlRequired.InnerText;
 								}
-							}
-						}
-						else if (objXmlRequired.Name == "attribute")
-						{
-							// Check to see if an Attribute meets a requirement.
-							Attribute objAttribute = _objCharacter.GetAttribute(objXmlRequired["name"].InnerText);
-
-							if (objXmlRequired["total"] != null)
-							{
-								// Make sure the Attribute's total value meets the requirement.
-								if (objAttribute.TotalValue >= Convert.ToInt32(objXmlRequired["total"].InnerText))
+								break;
+							case "metatypecategory":
+								// Check the Metatype Category requirement.
+								if (objXmlRequired.InnerText == _objCharacter.MetatypeCategory)
 									blnOneOfMet = true;
-							}
-						}
-						else if (objXmlRequired.Name == "attributetotal")
-						{
-							// Check if the character's Attributes add up to a particular total.
-							string strAttributes = objXmlRequired["attributes"].InnerText;
-							strAttributes = strAttributes.Replace("BOD", _objCharacter.GetAttribute("BOD").Value.ToString());
-							strAttributes = strAttributes.Replace("AGI", _objCharacter.GetAttribute("AGI").Value.ToString());
-							strAttributes = strAttributes.Replace("REA", _objCharacter.GetAttribute("REA").Value.ToString());
-							strAttributes = strAttributes.Replace("STR", _objCharacter.GetAttribute("STR").Value.ToString());
-							strAttributes = strAttributes.Replace("CHA", _objCharacter.GetAttribute("CHA").Value.ToString());
-							strAttributes = strAttributes.Replace("INT", _objCharacter.GetAttribute("INT").Value.ToString());
-							strAttributes = strAttributes.Replace("INT", _objCharacter.GetAttribute("LOG").Value.ToString());
-							strAttributes = strAttributes.Replace("WIL", _objCharacter.GetAttribute("WIL").Value.ToString());
-							strAttributes = strAttributes.Replace("MAG", _objCharacter.GetAttribute("MAG").Value.ToString());
-							strAttributes = strAttributes.Replace("RES", _objCharacter.GetAttribute("RES").Value.ToString());
-							strAttributes = strAttributes.Replace("EDG", _objCharacter.GetAttribute("EDG").Value.ToString());
-
-							XmlDocument objXmlDocument = new XmlDocument();
-							XPathNavigator nav = objXmlDocument.CreateNavigator();
-							XPathExpression xprAttributes = nav.Compile(strAttributes);
-							if (Convert.ToInt32(nav.Evaluate(xprAttributes)) >= Convert.ToInt32(objXmlRequired["val"].InnerText))
-								blnOneOfMet = true;
-						}
-						else if (objXmlRequired.Name == "skillgrouptotal")
-						{
-							// Check if the total combined Ratings of Skill Groups adds up to a particular total.
-							int intTotal = 0;
-							string[] strGroups = objXmlRequired["skillgroups"].InnerText.Split('+');
-							for (int i = 0; i <= strGroups.Length - 1; i++)
-							{
-								foreach (SkillGroup objGroup in _objCharacter.SkillGroups)
+								else
 								{
-									if (objGroup.Name == strGroups[i])
-									{
-										intTotal += objGroup.Rating;
-										break;
-									}
+									XmlNode objNode = this._objMetatypeDocument.SelectSingleNode("/chummer/categories/category[. = \"" + objXmlRequired.InnerText + "\"]");
+									if (objNode.Attributes["translate"] != null)
+										strThisRequirement += "\n\t" + objNode.Attributes["translate"].InnerText;
+									else
+										strThisRequirement = "\n\t" + objXmlRequired.InnerText;
 								}
-							}
-
-							if (intTotal >= Convert.ToInt32(objXmlRequired["val"].InnerText))
-								blnOneOfMet = true;
-						}
-						else if (objXmlRequired.Name == "cyberwares")
-						{
-							// Check to see if the character has a number of the required Cyberware/Bioware items.
-							int intTotal = 0;
-
-							// Check Cyberware.
-							foreach (XmlNode objXmlDocument in objXmlRequired.SelectNodes("cyberware"))
-							{
-								foreach (Cyberware objCyberware in _objCharacter.Cyberware)
+								break;
+							case "metavariant":
+								// Check the Metavariant requirement.
+								if (objXmlRequired.InnerText == _objCharacter.Metavariant)
+									blnOneOfMet = true;
+								else
 								{
-									bool blnFound = false;
-									if (objCyberware.Name == objXmlCyberware.InnerText)
+									XmlNode objNode = this._objMetatypeDocument.SelectSingleNode("/chummer/metatypes/metatype/metavariants/metavariant[name = \"" + objXmlRequired.InnerText + "\"]");
+									if (objNode["translate"] != null)
+										strThisRequirement += "\n\t" + objNode["translate"].InnerText;
+									else
+										strThisRequirement += "\n\t" + objXmlRequired.InnerText;
+								}
+								break;
+							case "power":
+								// Run through all of the Powers the character has and see if the current required item exists.
+								// If so, turn on the RequirementMet flag so it can be selected.
+								if (_objCharacter.AdeptEnabled && _objCharacter.Powers != null)
+								{
+									foreach (Power objCharacterPower in _objCharacter.Powers)
 									{
-										if (objXmlCyberware.Attributes["select"] == null)
+										//Check that the power matches the name and doesn't come from a bonus source like a focus. There's probably an edge case that this will break.
+										if (objXmlRequired.InnerText == objCharacterPower.Name && objCharacterPower.BonusSource.Length == 0)
 										{
-											intTotal++;
-											blnFound = true;
+											blnOneOfMet = true;
+										}
+									}
+
+									if (!blnOneOfMet)
+									{
+										strThisRequirement += "\n\t" + objXmlRequired.InnerText;
+									}
+								}
+								break;
+							case "inherited":
+								strThisRequirement += "\n\t" + LanguageManager.Instance.GetString("Message_SelectQuality_Inherit");
+								break;
+							case "careerkarma":
+								// Check Career Karma requirement.
+								if (_objCharacter.CareerKarma >= Convert.ToInt32(objXmlRequired.InnerText))
+									blnOneOfMet = true;
+								else
+									strThisRequirement = "\n\t" + LanguageManager.Instance.GetString("Message_SelectQuality_RequireKarma").Replace("{0}", objXmlRequired.InnerText);
+								break;
+							case "ess":
+								// Check Essence requirement.
+								if (objXmlRequired.InnerText.StartsWith("-"))
+								{
+									// Essence must be less than the value.
+									if (_objCharacter.Essence < Convert.ToDecimal(objXmlRequired.InnerText.Replace("-", string.Empty), GlobalOptions.Instance.CultureInfo))
+										blnOneOfMet = true;
+								}
+								else
+								{
+									// Essence must be equal to or greater than the value.
+									if (_objCharacter.Essence >= Convert.ToDecimal(objXmlRequired.InnerText, GlobalOptions.Instance.CultureInfo))
+										blnOneOfMet = true;
+								}
+								break;
+							case "skill":
+								// Check if the character has the required Skill.
+								foreach (Skill objSkill in _objCharacter.SkillsSection.Skills)
+								{
+									if (objSkill.Name == objXmlRequired["name"].InnerText)
+									{
+										if (objSkill.Rating >= Convert.ToInt32(objXmlRequired["val"].InnerText))
+										{
+											blnOneOfMet = true;
 											break;
 										}
-										else if (objXmlCyberware.Attributes["select"].InnerText == objCyberware.Location)
+									}
+								}
+								break;
+							case "attribute":
+								// Check to see if an Attribute meets a requirement.
+								CharacterAttrib objAttribute = _objCharacter.GetAttribute(objXmlRequired["name"].InnerText);
+
+								if (objXmlRequired["total"] != null)
+								{
+									// Make sure the Attribute's total value meets the requirement.
+									if (objAttribute.TotalValue >= Convert.ToInt32(objXmlRequired["total"].InnerText))
+										blnOneOfMet = true;
+								}
+								break;
+							case "attributetotal":
+								// Check if the character's Attributes add up to a particular total.
+								string strAttributes = objXmlRequired["attributes"].InnerText;
+								strAttributes = strAttributes.Replace("BOD", _objCharacter.GetAttribute("BOD").Value.ToString());
+								strAttributes = strAttributes.Replace("AGI", _objCharacter.GetAttribute("AGI").Value.ToString());
+								strAttributes = strAttributes.Replace("REA", _objCharacter.GetAttribute("REA").Value.ToString());
+								strAttributes = strAttributes.Replace("STR", _objCharacter.GetAttribute("STR").Value.ToString());
+								strAttributes = strAttributes.Replace("CHA", _objCharacter.GetAttribute("CHA").Value.ToString());
+								strAttributes = strAttributes.Replace("INT", _objCharacter.GetAttribute("INT").Value.ToString());
+								strAttributes = strAttributes.Replace("INT", _objCharacter.GetAttribute("LOG").Value.ToString());
+								strAttributes = strAttributes.Replace("WIL", _objCharacter.GetAttribute("WIL").Value.ToString());
+								strAttributes = strAttributes.Replace("MAG", _objCharacter.GetAttribute("MAG").Value.ToString());
+								strAttributes = strAttributes.Replace("RES", _objCharacter.GetAttribute("RES").Value.ToString());
+								strAttributes = strAttributes.Replace("EDG", _objCharacter.GetAttribute("EDG").Value.ToString());
+
+								XmlDocument objXmlDocument = new XmlDocument();
+								XPathNavigator nav = objXmlDocument.CreateNavigator();
+								XPathExpression xprAttributes = nav.Compile(strAttributes);
+								if (Convert.ToInt32(nav.Evaluate(xprAttributes)) >= Convert.ToInt32(objXmlRequired["val"].InnerText))
+									blnOneOfMet = true;
+								break;
+							case "skillgrouptotal":
+							{
+								// Check if the total combined Ratings of Skill Groups adds up to a particular total.
+								int intTotal = 0;
+								string[] strGroups = objXmlRequired["skillgroups"].InnerText.Split('+');
+								for (int i = 0; i <= strGroups.Length - 1; i++)
+								{
+									foreach (SkillGroup objGroup in _objCharacter.SkillsSection.SkillGroups)
+									{
+										if (objGroup.Name == strGroups[i])
+										{
+											intTotal += objGroup.Rating;
+											break;
+										}
+									}
+								}
+
+								if (intTotal >= Convert.ToInt32(objXmlRequired["val"].InnerText))
+									blnOneOfMet = true;
+							}
+								break;
+							case "cyberwares":
+							{
+								// Check to see if the character has a number of the required Cyberware/Bioware items.
+								int intTotal = 0;
+
+								// Check Cyberware.
+								foreach (XmlNode objXmlNode in objXmlRequired.SelectNodes("cyberware"))
+								{
+									foreach (Cyberware objCyberware in _objCharacter.Cyberware)
+									{
+										bool blnFound = false;
+										if (objCyberware.Name == objXmlNode.InnerText)
+										{
+											if (objXmlNode.Attributes["select"] == null)
+											{
+												intTotal++;
+												blnFound = true;
+												break;
+											}
+											else if (objXmlNode.Attributes["select"].InnerText == objCyberware.Location)
+											{
+												intTotal++;
+												blnFound = true;
+												break;
+											}
+										}
+										if (!blnFound)
+										{
+											strThisRequirement += "\n\t" + objXmlNode.InnerText;
+										}
+									}
+								}
+
+								// Check Bioware.
+								foreach (XmlNode objXmlNode in objXmlRequired.SelectNodes("bioware"))
+								{
+									bool blnFound = false;
+									foreach (Cyberware objCyberware in _objCharacter.Cyberware)
+									{
+										if (objCyberware.Name == objXmlNode.InnerText)
 										{
 											intTotal++;
 											blnFound = true;
@@ -1334,113 +1562,93 @@ namespace Chummer
 									}
 									if (!blnFound)
 									{
-										strThisRequirement += "\n\t" + objXmlCyberware.InnerText;
+										strThisRequirement += "\n\t" + objXmlNode.InnerText;
 									}
 								}
-							}
 
-							// Check Bioware.
-							foreach (XmlNode objXmlBioware in objXmlRequired.SelectNodes("bioware"))
-							{
-								bool blnFound = false;
-								foreach (Cyberware objCyberware in _objCharacter.Cyberware)
+								// Check Cyberware name that contain a straing.
+								foreach (XmlNode objXmlNode in objXmlRequired.SelectNodes("cyberwarecontains"))
 								{
-									if (objCyberware.Name == objXmlBioware.InnerText)
+									foreach (Cyberware objCyberware in _objCharacter.Cyberware)
 									{
-										intTotal++;
-										blnFound = true;
-										break;
+										if (objCyberware.Name.Contains(objXmlNode.InnerText))
+										{
+											if (objXmlCyberware.Attributes["select"] == null)
+											{
+												intTotal++;
+												break;
+											}
+											else if (objXmlCyberware.Attributes["select"].InnerText == objCyberware.Location)
+											{
+												intTotal++;
+												break;
+											}
+										}
 									}
 								}
-								if (!blnFound)
-								{
-									strThisRequirement += "\n\t" + objXmlBioware.InnerText;
-								}
-							}
 
-							// Check Cyberware name that contain a straing.
-							foreach (XmlNode objXmlDocument in objXmlRequired.SelectNodes("cyberwarecontains"))
-							{
-								foreach (Cyberware objCyberware in _objCharacter.Cyberware)
+								// Check Bioware name that contain a straing.
+								foreach (XmlNode objXmlNode in objXmlRequired.SelectNodes("biowarecontains"))
 								{
-									if (objCyberware.Name.Contains(objXmlCyberware.InnerText))
+									foreach (Cyberware objCyberware in _objCharacter.Cyberware)
 									{
-										if (objXmlCyberware.Attributes["select"] == null)
+										if (objCyberware.Name.Contains(objXmlNode.InnerText))
 										{
-											intTotal++;
-											break;
-										}
-										else if (objXmlCyberware.Attributes["select"].InnerText == objCyberware.Location)
-										{
-											intTotal++;
-											break;
+											if (objXmlNode.Attributes["select"] == null)
+											{
+												intTotal++;
+												break;
+											}
+											else if (objXmlNode.Attributes["select"].InnerText == objCyberware.Location)
+											{
+												intTotal++;
+												break;
+											}
 										}
 									}
 								}
-							}
 
-							// Check Bioware name that contain a straing.
-							foreach (XmlNode objXmlDocument in objXmlRequired.SelectNodes("biowarecontains"))
-							{
-								foreach (Cyberware objCyberware in _objCharacter.Cyberware)
+								// Check for Cyberware Plugins.
+								foreach (XmlNode objXmlNode in objXmlRequired.SelectNodes("cyberwareplugin"))
 								{
-									if (objCyberware.Name.Contains(objXmlCyberware.InnerText))
+									foreach (Cyberware objCyberware in _objCharacter.Cyberware)
 									{
-										if (objXmlCyberware.Attributes["select"] == null)
+										foreach (Cyberware objPlugin in objCyberware.Children)
 										{
-											intTotal++;
-											break;
-										}
-										else if (objXmlCyberware.Attributes["select"].InnerText == objCyberware.Location)
-										{
-											intTotal++;
-											break;
+											if (objPlugin.Name == objXmlNode.InnerText)
+											{
+												intTotal++;
+												break;
+											}
 										}
 									}
 								}
-							}
 
-							// Check for Cyberware Plugins.
-							foreach (XmlNode objXmlDocument in objXmlRequired.SelectNodes("cyberwareplugin"))
-							{
-								foreach (Cyberware objCyberware in _objCharacter.Cyberware)
+								// Check for Cyberware Categories.
+								foreach (XmlNode objXmlNode in objXmlRequired.SelectNodes("cyberwarecategory"))
 								{
-									foreach (Cyberware objPlugin in objCyberware.Children)
+									foreach (Cyberware objCyberware in _objCharacter.Cyberware)
 									{
-										if (objPlugin.Name == objXmlCyberware.InnerText)
-										{
+										if (objCyberware.Category == objXmlNode.InnerText)
 											intTotal++;
-											break;
-										}
 									}
 								}
-							}
 
-							// Check for Cyberware Categories.
-							foreach (XmlNode objXmlDocument in objXmlRequired.SelectNodes("cyberwarecategory"))
-							{
-								foreach (Cyberware objCyberware in _objCharacter.Cyberware)
-								{
-									if (objCyberware.Category == objXmlCyberware.InnerText)
-										intTotal++;
-								}
+								if (intTotal >= Convert.ToInt32(objXmlRequired["count"].InnerText))
+									blnOneOfMet = true;
 							}
-
-							if (intTotal >= Convert.ToInt32(objXmlRequired["count"].InnerText))
-								blnOneOfMet = true;
-						}
-						else if (objXmlRequired.Name == "streetcredvsnotoriety")
-						{
-							// Street Cred must be higher than Notoriety.
-							if (_objCharacter.StreetCred >= _objCharacter.Notoriety)
-								blnOneOfMet = true;
-						}
-						else if (objXmlRequired.Name == "damageresistance")
-						{
-							// Damage Resistance must be a particular value.
-							ImprovementManager _objImprovementManager = new ImprovementManager(_objCharacter);
-							if (_objCharacter.BOD.TotalValue + _objImprovementManager.ValueOf(Improvement.ImprovementType.DamageResistance) >= Convert.ToInt32(objXmlRequired.InnerText))
-								blnOneOfMet = true;
+								break;
+							case "streetcredvsnotoriety":
+								// Street Cred must be higher than Notoriety.
+								if (_objCharacter.StreetCred >= _objCharacter.Notoriety)
+									blnOneOfMet = true;
+								break;
+							case "damageresistance":
+								// Damage Resistance must be a particular value.
+								ImprovementManager _objImprovementManager = new ImprovementManager(_objCharacter);
+								if (_objCharacter.BOD.TotalValue + _objImprovementManager.ValueOf(Improvement.ImprovementType.DamageResistance) >= Convert.ToInt32(objXmlRequired.InnerText))
+									blnOneOfMet = true;
+								break;
 						}
 					}
 
@@ -1528,10 +1736,5 @@ namespace Chummer
 		}
 		#endregion
 
-        private void lblSource_Click(object sender, EventArgs e)
-        {
-            CommonFunctions objCommon = new CommonFunctions(_objCharacter);
-            objCommon.OpenPDF(lblSource.Text);
-        }
 	}
 }

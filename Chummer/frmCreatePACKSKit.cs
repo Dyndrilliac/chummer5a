@@ -1,4 +1,4 @@
-/*  This file is part of Chummer5a.
+﻿/*  This file is part of Chummer5a.
  *
  *  Chummer5a is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,12 +16,14 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
-﻿using System;
+ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml;
+ using Chummer.Backend.Equipment;
+ using Chummer.Skills;
 
 namespace Chummer
 {
@@ -62,7 +64,7 @@ namespace Chummer
 
 			// See if a Kit with this name already exists for the Custom category. This is done without the XmlManager since we need to check each file individually.
 			XmlDocument objXmlDocument = new XmlDocument();
-			string strCustomPath = Path.Combine(Environment.CurrentDirectory, "data");
+			string strCustomPath = Path.Combine(Application.StartupPath, "data");
 			foreach (string strFile in Directory.GetFiles(strCustomPath, "custom*_packs.xml"))
 			{
 				objXmlDocument.Load(strFile);
@@ -218,35 +220,37 @@ namespace Chummer
 			{
 				// <skills>
 				objWriter.WriteStartElement("skills");
+				
+				//TODO: Figure out what this did?
 				// Active Skills.
-				foreach (Skill objSkill in _objCharacter.Skills)
-				{
-					if (!objSkill.KnowledgeSkill && !objSkill.IsGrouped && objSkill.Rating > 0)
-					{
-						// <skill>
-						objWriter.WriteStartElement("skill");
-						objWriter.WriteElementString("name", objSkill.Name);
-						objWriter.WriteElementString("rating", objSkill.Rating.ToString());
-						if (objSkill.Specialization != "")
-							objWriter.WriteElementString("spec", objSkill.Specialization);
-						// </skill>
-						objWriter.WriteEndElement();
-					}
-				}
+				//foreach (Skill objSkill in _objCharacter.Skills)
+				//{
+				//	if (!objSkill.KnowledgeSkill && !objSkill.IsGrouped && objSkill.Rating > 0)
+				//	{
+				//		// <skill>
+				//		objWriter.WriteStartElement("skill");
+				//		objWriter.WriteElementString("name", objSkill.Name);
+				//		objWriter.WriteElementString("rating", objSkill.Rating.ToString());
+				//		if (objSkill.Specialization != "")
+				//			objWriter.WriteElementString("spec", objSkill.Specialization);
+				//		// </skill>
+				//		objWriter.WriteEndElement();
+				//	}
+				//}  
 
 				// Skill Groups.
-				foreach (SkillGroup objSkillGroup in _objCharacter.SkillGroups)
-				{
-					if (!objSkillGroup.Broken && objSkillGroup.Rating > 0)
-					{
-						// <skillgroup>
-						objWriter.WriteStartElement("skillgroup");
-						objWriter.WriteElementString("name", objSkillGroup.Name);
-						objWriter.WriteElementString("rating", objSkillGroup.Rating.ToString());
-						// </skillgroup>
-						objWriter.WriteEndElement();
-					}
-				}
+				//foreach (SkillGroup objSkillGroup in _objCharacter.SkillGroups)
+				//{
+				//	if (!objSkillGroup.Broken && objSkillGroup.Rating > 0)
+				//	{
+				//		// <skillgroup>
+				//		objWriter.WriteStartElement("skillgroup");
+				//		objWriter.WriteElementString("name", objSkillGroup.Name);
+				//		objWriter.WriteElementString("rating", objSkillGroup.Rating.ToString());
+				//		// </skillgroup>
+				//		objWriter.WriteEndElement();
+				//	}
+				//}
 				// </skills>
 				objWriter.WriteEndElement();
 			}
@@ -257,9 +261,9 @@ namespace Chummer
 				// <knowledgeskills>
 				objWriter.WriteStartElement("knowledgeskills");
 				// Active Skills.
-				foreach (Skill objSkill in _objCharacter.Skills)
+				foreach (Skill objSkill in _objCharacter.SkillsSection.Skills)
 				{
-					if (objSkill.KnowledgeSkill)
+					if (objSkill.IsKnowledgeSkill)
 					{
 						// <skill>
 						objWriter.WriteStartElement("skill");
@@ -453,8 +457,8 @@ namespace Chummer
 						{
 							// <qualities>
 							objWriter.WriteStartElement("qualities");
-							foreach (LifestyleQuality strQuality in objLifestyle.LifestyleQualities)
-								objWriter.WriteElementString("quality", strQuality.ToString());
+							foreach (LifestyleQuality objQuality in objLifestyle.LifestyleQualities)
+								objWriter.WriteElementString("quality", objQuality.Name);
 							// </qualities>
 							objWriter.WriteEndElement();
 						}

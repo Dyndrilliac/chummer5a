@@ -115,13 +115,25 @@ namespace Chummer
 					return;
 				}
 			}
-
-			if (!blnUseRelative)
-				GlobalOptions.Instance.MainForm.LoadCharacter(_objContact.FileName, false);
+			if (Path.GetExtension(_objContact.FileName) == "chum5")
+			{
+				if (!blnUseRelative)
+					GlobalOptions.Instance.MainForm.LoadCharacter(_objContact.FileName, false);
+				else
+				{
+					string strFile = Path.GetFullPath(_objContact.RelativeFileName);
+					GlobalOptions.Instance.MainForm.LoadCharacter(strFile, false);
+				}
+			}
 			else
 			{
-				string strFile = Path.GetFullPath(_objContact.RelativeFileName);
-				GlobalOptions.Instance.MainForm.LoadCharacter(strFile, false);
+				if (!blnUseRelative)
+					System.Diagnostics.Process.Start(_objContact.FileName);
+				else
+				{
+					string strFile = Path.GetFullPath(_objContact.RelativeFileName);
+					System.Diagnostics.Process.Start(strFile);
+				}
 			}
 		}
 
@@ -146,7 +158,7 @@ namespace Chummer
 				objPet = null;
 
 				// Set the relative path.
-				Uri uriApplication = new Uri(@Environment.CurrentDirectory);
+				Uri uriApplication = new Uri(@Application.StartupPath);
 				Uri uriFile = new Uri(@_objContact.FileName);
 				Uri uriRelative = uriApplication.MakeRelativeUri(uriFile);
 				_objContact.RelativeFileName = "../" + uriRelative.ToString();

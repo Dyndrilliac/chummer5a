@@ -1,21 +1,18 @@
-##Required Fields
-Please fill these out as accurately as possible. More detail makes it easier for us to find the problems and fix them.
+(Please fill out the below as accurately as possible. More detail makes it easier for us to find the problems and fix them.)
 
-### Chummer Version
+### Environment
+Chummer Version: (What version of chummer are you running?
+Environment: (Operating system here. If it persists over multiple OS's list them all)
+Runtime: (If you don't know this, it is probably .NET 4.5.1)
 
 ### Expected behaviour
+(Enter text here)
 
 ### Actual behaviour
+(Enter text here)
 
 ### Steps to reproduce the behaviour
-
-##Helpful Fields
-These may not be relevant in most cases. If they are, please fill them out. Otherwise, feel free to remove them.
-
-### Operating System
-
-### Use of international language content
-
-### Last known good version
+(Enter text here)
 
 ### Link to affected character file
+(Enter text here)

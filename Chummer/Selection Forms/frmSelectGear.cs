@@ -1,4 +1,4 @@
-/*  This file is part of Chummer5a.
+﻿/*  This file is part of Chummer5a.
  *
  *  Chummer5a is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,12 +16,13 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
-﻿using System;
+ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using System.Xml;
 using System.Xml.XPath;
+ using Chummer.Backend.Equipment;
 
 namespace Chummer
 {
@@ -58,7 +59,6 @@ namespace Chummer
 		{
 			InitializeComponent();
 			LanguageManager.Instance.Load(GlobalOptions.Instance.Language, this);
-			chkFreeItem.Visible = blnCareer;
 			lblMarkupLabel.Visible = blnCareer;
 			nudMarkup.Visible = blnCareer;
 			lblMarkupPercentLabel.Visible = blnCareer;
@@ -203,6 +203,8 @@ namespace Chummer
 
 			if (_strSelectedGear != "")
 				lstGear.SelectedValue = _strSelectedGear;
+			else
+				txtSearch.Text = DefaultSearchText;
 		}
 
 		private void cboCategory_SelectedIndexChanged(object sender, EventArgs e)
@@ -737,6 +739,11 @@ namespace Chummer
 				return _blnBlackMarketDiscount;
 			}
 		}
+
+		/// <summary>
+		/// Default text string to filter by. 
+		/// </summary>
+		public string DefaultSearchText { get; set; }
 		#endregion
 
 		#region Methods
@@ -781,23 +788,26 @@ namespace Chummer
 				else
 					chkInherentProgram.Visible = false;
 
-				if (objXmlGear["category"].InnerText == "Commlinks" || objXmlGear["category"].InnerText == "Cyberdecks" || objXmlGear["category"].InnerText == "Commlink Upgrade")
+				switch (objXmlGear["category"].InnerText)
 				{
-					lblGearDeviceRating.Text = objXmlGear["devicerating"].InnerText;
-				}
-				else if (objXmlGear["category"].InnerText == "Commlink Operating System" || objXmlGear["category"].InnerText == "Commlink Operating System Upgrade")
-				{
-					lblGearDeviceRating.Text = "";
-				}
-				else
-				{
-					lblGearDeviceRating.Text = "";
+					case "Commlinks":
+					case "Cyberdecks":
+					case "Commlink Upgrade":
+						lblGearDeviceRating.Text = objXmlGear["devicerating"].InnerText;
+						break;
+					case "Commlink Operating System":
+					case "Commlink Operating System Upgrade":
+						lblGearDeviceRating.Text = "";
+						break;
+					default:
+						lblGearDeviceRating.Text = "";
+						break;
 				}
 
-				if (objXmlGear["category"].InnerText.EndsWith("Software") || objXmlGear["category"].InnerText.EndsWith("Programs") || objXmlGear["category"].InnerText == "Program Options" || objXmlGear["category"].InnerText.StartsWith("Autosofts") || objXmlGear["category"].InnerText.StartsWith("Skillsoft") || objXmlGear["category"].InnerText == "Program Packages" || objXmlGear["category"].InnerText == "Software Suites")
+				/*if (objXmlGear["category"].InnerText.EndsWith("Software") || objXmlGear["category"].InnerText.EndsWith("Programs") || objXmlGear["category"].InnerText == "Program Options" || objXmlGear["category"].InnerText.StartsWith("Autosofts") || objXmlGear["category"].InnerText.StartsWith("Skillsoft") || objXmlGear["category"].InnerText == "Program Packages" || objXmlGear["category"].InnerText == "Software Suites")
 					chkHacked.Visible = true;
 				else
-					chkHacked.Visible = false;
+					chkHacked.Visible = false;*/
 
 				string strBook = _objCharacter.Options.LanguageBookShort(objXmlGear["source"].InnerText);
 				string strPage = objXmlGear["page"].InnerText;
@@ -860,6 +870,8 @@ namespace Chummer
 						double dblCost = 0.0;
 						dblCost = Convert.ToDouble(nav.Evaluate(xprCost), GlobalOptions.Instance.CultureInfo) * dblMultiplier;
 						dblCost *= 1 + (Convert.ToDouble(nudMarkup.Value, GlobalOptions.Instance.CultureInfo) / 100.0);
+					    if (chkBlackMarketDiscount.Checked)
+					        dblCost *= 0.9;
 						if (chkHacked.Checked)
 							dblCost *= 0.1;
 						lblCost.Text = String.Format("{0:###,###,##0¥}", dblCost * _intCostMultiplier);

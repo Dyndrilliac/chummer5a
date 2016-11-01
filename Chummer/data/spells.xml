@@ -18,7 +18,7 @@
     https://github.com/chummer5a/chummer5a
 -->
 <chummer>
-  <version>-380</version>
+  <version>0</version>
   <categories>
     <category>Combat</category>
     <category>Detection</category>
@@ -528,7 +528,7 @@
       <range>T</range>
       <damage>0</damage>
       <duration>S</duration>
-      <dv>(F/2)-4</dv>
+      <dv>F-3</dv>
       <source>SG</source>
       <page>109</page>
     </spell>
@@ -561,6 +561,7 @@
           <excludeattribute>MAG</excludeattribute>
           <excludeattribute>RES</excludeattribute>
           <excludeattribute>EDG</excludeattribute>
+					<excludeattribute>DEP</excludeattribute>
         </selectattribute>
       </bonus>
       <source>SR5</source>
@@ -608,6 +609,7 @@
           <excludeattribute>MAG</excludeattribute>
           <excludeattribute>RES</excludeattribute>
           <excludeattribute>EDG</excludeattribute>
+					<excludeattribute>DEP</excludeattribute>
         </selectattribute>
       </bonus>
       <source>SR5</source>
@@ -3010,7 +3012,7 @@
       <dv>Special</dv>
       <required>
         <allof>
-          <art>Centering</art>
+          <art>Cleansing</art>
         </allof>
       </required>
       <source>SG</source>
@@ -3398,7 +3400,7 @@
       <dv>Special</dv>
       <required>
         <allof>
-          <art>Centering</art>
+          <art>Cleansing</art>
         </allof>
       </required>
       <source>SG</source>
@@ -4081,7 +4083,7 @@
       <range>LOS(A)</range>
       <damage>0</damage>
       <duration>S</duration>
-      <dv>F11</dv>
+      <dv>F-1</dv>
       <source>SSP</source>
       <page>21</page>
     </spell>

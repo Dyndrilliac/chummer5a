@@ -18,7 +18,7 @@
     https://github.com/chummer5a/chummer5a
 -->
 <chummer>
-	<version>-400</version>
+	<version>0</version>
 	<ranges>
 		<range>
 			<category>Tasers</category>
@@ -91,6 +91,14 @@
 			<medium>40</medium>
 			<long>80</long>
 			<extreme>150</extreme>
+		</range>
+		<range>
+			<category>Shotguns (flechette)</category>
+			<min>0</min>
+			<short>15</short>
+			<medium>30</medium>
+			<long>45</long>
+			<extreme>60</extreme>
 		</range>
 		<range>
 			<category>Sniper Rifles</category>

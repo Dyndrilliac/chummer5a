@@ -1,4 +1,4 @@
-/*  This file is part of Chummer5a.
+﻿/*  This file is part of Chummer5a.
  *
  *  Chummer5a is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,12 +16,13 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
-﻿using System;
+ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using System.Xml;
 using System.Xml.XPath;
+ using Chummer.Backend.Equipment;
 
 namespace Chummer
 {
@@ -37,13 +38,13 @@ namespace Chummer
 
 		private XmlDocument _objXmlDocument = new XmlDocument();
 		private readonly Character _objCharacter;
+		private bool _blnBlackMarketDiscount;
 
 		#region Control Events
 		public frmSelectArmorMod(Character objCharacter, bool blnCareer = false)
 		{
 			InitializeComponent();
 			LanguageManager.Instance.Load(GlobalOptions.Instance.Language, this);
-			chkFreeItem.Visible = blnCareer;
 			lblMarkupLabel.Visible = blnCareer;
 			nudMarkup.Visible = blnCareer;
 			lblMarkupPercentLabel.Visible = blnCareer;
@@ -161,6 +162,17 @@ namespace Chummer
 			set
 			{
 				_intArmorCost = value;
+			}
+		}
+
+		/// <summary>
+		/// Whether or not the selected Vehicle is used.
+		/// </summary>
+		public bool BlackMarketDiscount
+		{
+			get
+			{
+				return _blnBlackMarketDiscount;
 			}
 		}
 
@@ -350,6 +362,7 @@ namespace Chummer
 		{
 			_strSelectedArmorMod = lstMod.SelectedValue.ToString();
 			_intMarkup = Convert.ToInt32(nudMarkup.Value);
+			_blnBlackMarketDiscount = chkBlackMarketDiscount.Checked;
 			this.DialogResult = DialogResult.OK;
 		}
 

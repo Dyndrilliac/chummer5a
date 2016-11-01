@@ -5,117 +5,128 @@
 
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:msxsl="urn:schemas-microsoft-com:xslt">
 	<xsl:output method="html" indent="yes" version="4.0"/>
-	
-  
+	<xsl:include href="xt.PreserveLineBreaks.xslt"/>
+	<xsl:include href="xt.TitleName.xslt"/>
+
 	<xsl:template match="/characters/character">
+		<xsl:variable name="TitleName">
+			<xsl:call-template name="TitleName">
+				<xsl:with-param name="name" select="name"/>
+				<xsl:with-param name="alias" select="alias"/>
+			</xsl:call-template>
+		</xsl:variable>
+
 		<xsl:text disable-output-escaping="yes"><![CDATA[<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">]]></xsl:text>
 		<html>
 			<head>
-				<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-				<title><xsl:value-of select="name" /></title>
+				<meta http-equiv="x-ua-compatible" content="IE=Edge"/>
+				<title><xsl:value-of select="$TitleName" /></title>
 				<style type="text/css">
 					*
 					{
-						font-family: Arial, Helvetica, sans-serif;
-						font-size: 12px;
-						vertical-align: top;
+					font-family: Arial, Helvetica, sans-serif;
+					font-size: 12px;
+					vertical-align: top;
 					}
 					hr
 					{
-						color: lightgrey;
-						height: 1px;
-						margin-left: 2px;
-						margin-right: 2px;
+					color: lightgrey;
+					height: 1px;
+					margin-left: 2px;
+					margin-right: 2px;
 					}
 					ul
 					{
-						margin-top: 0px;
-						margin-bottom: 0px;
-						margin-left: 20px;
-						padding-left: 0px;
-						list-style-type: none;
+					margin-top: 0px;
+					margin-bottom: 0px;
+					margin-left: 20px;
+					padding-left: 0px;
+					list-style-type: none;
 					}
 					li
 					{
-						margin-top: 2px;
+					margin-top: 2px;
 					}
 					.fill33
 					{
-						width: 33%;
+					width: 33%;
 					}
 					.fill66
 					{
-						width: 66%;
+					width: 66%;
 					}
 					{
 					.fill100
-						width: 100%;
+					width: 100%;
 					}
 					table.stats
 					{
-						border-style: solid;
-						border-width: 1px;
-						border-color: grey;
-						width: 100%;
-						border-collapse: collapse;
+					border-style: solid;
+					border-width: 1px;
+					border-color: grey;
+					width: 100%;
+					border-collapse: collapse;
 					}
 					table.stats td
 					{
-						padding: 2px;
+					padding: 2px;
 					}
 					table.stats .bigheader
 					{
-						color: white;
-						background-color: grey;
-						font-weight: normal;
-						font-variant: small-caps;
-						font-size: 110%;
-						text-align: center;
-						padding-top: 1px;
-						padding-bottom: 2px;
+					color: white;
+					background-color: grey;
+					font-weight: normal;
+					font-variant: small-caps;
+					font-size: 110%;
+					text-align: center;
+					padding-top: 1px;
+					padding-bottom: 2px;
+					}
+					tr:nth-child(odd) {
+					background: #eee
 					}
 					.smallheader
 					{
-						color: grey;
+					color: grey;
 					}
 					strong
 					{
-						font-size: 105%;
+					font-size: 105%;
 					}
 					@media screen
 					{
-						.page_breaker_off, .page_breaker_on
-						{
-							display: initial;
-							text-align: left;
-						}
-						.page_breaker_off td, .page_breaker_on td
-						{
-							border-style: solid;
-							border-width: 1px;
-							border-color: lightgrey;
-						}
+					.page_breaker_off, .page_breaker_on
+					{
+					display: initial;
+					text-align: left;
+					}
+					.page_breaker_off td, .page_breaker_on td
+					{
+					border-style: solid;
+					border-width: 1px;
+					border-color: lightgrey;
+					}
 					}
 					@media print
 					{
-						*
-						{
-							font-size: 10px;
-						}
-						.page_breaker_off
-						{
-							page-break-before: auto;
-							display: none;
-						}
-						.page_breaker_on
-						{
-							page-break-before: always;
-							display: none;
-						}
-						.noprint
-						{
-							display: none;
-						}
+					*
+					{
+					font-size: 10px;
+					}
+					.page_breaker_off
+					{
+					page-break-before: auto;
+					display: none;
+					}
+					.page_breaker_on
+					{
+					page-break-before: always;
+					display: none;
+					}
+					.noprint
+					{
+					display: none;
+					}
 					}
 				</style>
 			
@@ -442,7 +453,7 @@
 			<tr><td colspan="2"><div class="bigheader">[Mugshot]</div></td></tr>
 			<tr><td colspan="2">
 				<xsl:if test="mugshot != ''">
-					<img src="{mugshot}" />
+					<img src="data:image/png;base64,{mugshotbase64}" />
 				</xsl:if>
 			</td></tr>
 			<xsl:if test="prioritymetatype != ''">
@@ -509,7 +520,7 @@
 						<xsl:if test="spec!=''">
 							(<xsl:value-of select="spec" />)
 						</xsl:if>
-						<span style="color:grey;"><xsl:text> </xsl:text><xsl:value-of select="attribute" /></span>
+						<span style="color:grey;"><xsl:text> </xsl:text><xsl:value-of select="displayattribute" /></span>
 					</td>
 					<td><xsl:value-of select="rating" /></td>
 					<td>
@@ -1934,25 +1945,6 @@
 				background-color:lightgrey;
 			</xsl:attribute>
 		</xsl:if>
-	</xsl:template>
-	
-	<xsl:template name="PreserveLineBreaks">
-		<xsl:param name="text"/>
-		
-		<xsl:choose>
-			<xsl:when test="contains($text,'&#xA;')">
-				<xsl:value-of select="substring-before($text,'&#xA;')"/>
-				<br/>
-				<xsl:call-template name="PreserveLineBreaks">
-					<xsl:with-param name="text">
-						<xsl:value-of select="substring-after($text,'&#xA;')"/>
-					</xsl:with-param>
-				</xsl:call-template>
-			</xsl:when>
-			<xsl:otherwise>
-				<xsl:value-of select="$text"/>
-			</xsl:otherwise>
-		</xsl:choose>
 	</xsl:template>
 	
 	<xsl:template name="page_breaker">

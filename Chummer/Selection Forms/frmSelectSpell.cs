@@ -29,6 +29,7 @@ namespace Chummer
         private string _strSelectedSpell = "";
 
 		private bool _blnAddAgain = false;
+	    private bool _blnIgnoreRequirements = false;
 		private string _strLimitCategory = "";
 		private string _strForceSpell = "";
 		private List<TreeNode> _lstExpandCategories;
@@ -102,13 +103,18 @@ namespace Chummer
 			}
 
 			treSpells.TreeViewNodeSorter = new SortByName();
+            treSpells.SelectedNode = treSpells.Nodes[0];
             foreach (XmlNode objXmlSpell in objXmlNodeList)
             {
                 TreeNode nodSpell = new TreeNode();
                 TreeNode nodParent = new TreeNode();
                 bool blnInclude = false;
 
-                if (_objCharacter.AdeptEnabled && !_objCharacter.MagicianEnabled)
+	            if (_blnIgnoreRequirements)
+	            {
+		            blnInclude = true;
+	            }
+	            else if (_objCharacter.AdeptEnabled && !_objCharacter.MagicianEnabled)
                 {
                     if (objXmlSpell["category"].InnerText != "Rituals")
                         blnInclude = false;
@@ -543,6 +549,10 @@ namespace Chummer
 
 			foreach (TreeNode nodNode in lstRemove)
 				treSpells.Nodes.Remove(nodNode);
+		    if (treSpells.Nodes.Count > 0)
+		    {
+		        treSpells.SelectedNode = treSpells.Nodes[0];
+		    }
 		}
 
 		private void cmdOKAdd_Click(object sender, EventArgs e)
@@ -693,6 +703,19 @@ namespace Chummer
                 return _strSelectedSpell;
             }
         }
+
+	    public bool IgnoreRequirements
+	    {
+		    get
+		    {
+			    return _blnIgnoreRequirements;
+		    }
+		    set
+		    {
+			    _blnIgnoreRequirements = value;
+		    }
+
+	    }
 		#endregion
 
 		#region Methods

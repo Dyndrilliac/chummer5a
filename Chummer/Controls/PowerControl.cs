@@ -52,25 +52,21 @@ namespace Chummer
 			decimal actualRating = _objPower.Rating - _objPower.FreeLevels;
 			decimal newRating = actualRating + _objPower.FreeLevels;
 
-			nudRating.Maximum = _objPower.MaxLevels;
+			nudRating.Maximum = Math.Max(1, _objPower.MaxLevels);
             nudRating.Minimum = _objPower.FreeLevels;
 
-			if (newRating > Convert.ToDecimal(_objPower.CharacterObject.MAG.Value))
-			{
-				nudRating.Value = Convert.ToDecimal(_objPower.CharacterObject.MAG.Value);
-			}
-			else
-			{
-				if (actualRating > _objPower.FreeLevels)
-				{
-					nudRating.Value = newRating;
-				}
-				else
-				{
-					nudRating.Value = _objPower.FreeLevels;
-				}
-			}
-		}
+            if (newRating < _objPower.FreeLevels)
+            {
+                newRating = _objPower.FreeLevels;
+            }
+
+            if (newRating > Convert.ToDecimal(_objPower.CharacterObject.MAG.Value))
+            {
+                newRating = Convert.ToDecimal(_objPower.CharacterObject.MAG.Value);
+            }
+			//if(_objPower.LevelsEnabled)
+				nudRating.Value = newRating;
+        }
         
 		private void nudRating_ValueChanged(object sender, EventArgs e)
         {
@@ -167,7 +163,7 @@ namespace Chummer
         }
 
         /// <summary>
-        /// Extra Power information (selected Attribute or Skill name).
+        /// Extra Power information (selected CharacterAttribute or Skill name).
         /// </summary>
         public string Extra
         {
@@ -361,7 +357,7 @@ namespace Chummer
         }
 
 		/// <summary>
-		/// Refresh the maximum level for the Power based on the character's MAG Attribute.
+		/// Refresh the maximum level for the Power based on the character's MAG CharacterAttribute.
 		/// </summary>
 		/// <param name="intMAG">MAG value.</param>
 		public void RefreshMaximum(int intMAG)

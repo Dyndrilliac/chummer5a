@@ -1,6 +1,430 @@
-Build 179:
+Build 187
+
+Application Changes:
+
+- Fixed an issue that prevented characters in karmagen from unlocking special attributes by taking the relevant qualities. 
+- Renamed the addattribute improvement to enableattribute.
+- Fixed an issue that prevented the Enable/Disable Sourcebook button from actually changing the settings. 
+- Fixed an issue with the display of calculated Limit modifiers. Fixes #1175.
+- Removed the ability to mark an item as Hacked.
+- Made some minor tweaks to the calculation of whether a quality contributes to the limit during chargen.
+- Fixed an issue that prevented initiation in create mode from allowing MAG or RES to exceed the Metatype Maximum. 
+- Added code to preserve the window position of the main form on exit. Looking for feedback on if this is a useful feature that should carry through to the rest of the application's forms.
+- Fixed a missing binding for PDF offsets in the Options menu. 
+- Fixed an issue with custom knowledge skills that could cause a crash when not using English strings. 
+- Fixed an issue where Priority Aspected Magicians didn't get their unlocked skill group. 
+- Fixed an issue that prevented the Blackmail and Family options from forcing a cost refresh for contacts in Create mode.
+- Fixed the addweapon node for Armour to actually add the weapon to the character.
+- Added support for <required/oneof/lifestyle> to lifestyle qualities. 
+
+Data Changes: 
+
+- Removed most existing addattribute elements to be enableattribute instead. Affects the Pixie, Centaur, Sasquatch, Naga and Drake qualities. 
+- Fixed an issue that prevented metavariants with a karma cost from properly charging the Karma cost.
+- Fixed an issue that caused a crash when searching for certain strings in the weapon selection form. 
+- Hid a bunch of weapons that shouldn't normally be visible.
+- Added a missing Sensor Function to the gear category. Fixes #1176.
+- Added Blood Magic metamagics from Street Grimoire.
+- Added an Under mod slot for the Shiawase Incinerator flamethrower.
+- Removed the mod slots from the Shiawase Blazer.
+- Fixed the implementation of Mutaqua, Wendigo and Nosferatu to not require adding a Mystic Adept quality. 
+- Updated the Thrifty negative lifestyle quality to properly require the Traveler lifestyle.
+
+Sheet Changes:
+
+- Character sheets now default to displaying the Alias of a character as a header in preference to their Name attribute when printing.
+
+Build 186:
+
+Application Changes:
+
+- Fixed missing values for Metahuman adjustment on several vehicles.
+- Properly applied localisation to the character roster form.
+- Fixed the karma costs for new knowledge skills in career mode to not improperly charge twice. 
+- Added a missing Seats label for vehicles.
+- Set the Astral Initiative label to be invisible if the character is not Awakened.
+- Altered the SelectWeapon improvement to allow excluding a specific weapon type. Prevents spare clips from trying to select melee weapons.
+- Fixed the Expense Log entry for Knowledge Skill increases to properly indicate it's a Knowledge Skill entry. Removed an accidental double-charge for creating skills.
+- Slightly refactored weapon selection to use GUIDs instead of names. 
+- Altered the underbarrel weapon node to allow multiple child items.
+- Added the ability to hide weapons from being visible in the selection window. 
+- Added a File Path label to the Character Roster.
+- Added the ability to delete items from the Character Roster by pressing the Delete button. This will ONLY remove the file from the relevant MRU lists, no .chum5 files will be deleted.
+- Suppressed the ability to attempt to add a Nexus to vehicle or gear items. 
+- Added the ability to filter qualities by their karma values, applying a minimum, maximum and value boundary to the quality list. 
+- Made some alterations to the display of characters in the Roster. Added the Game Notes field, removed the ability to edit the text (It wasn't saving anyway.)
+- Fixed the calculation method of Custom Fit (Stack) mods to work more reliably.
+- Fixed the implementation of Awakened Infected (Mutaqua, Wendigo, etc.) to not add the relevant qualities. 
+- Added logic to prevent weapon accessories from applying their bonuses while uninstalled. 
+- Added naming logic to the Create Mode form, similar to the behaviour for Career Mode. In order of precedence, characters will use their Alias, Real Name or the localised string for Unnamed Character. 
+- Fixed the 'Increase Qty' button in career mode to properly select the currently selected item. 
+- Altered the crash handler logic to jump directly into the crash handler form. Important note: We still only receive the report if you click Send Error Report. 
+- Nightly builds are now configured as Release, fixing an issue with launching the Crash Handler.
+- Added a warning that porevents creating invalid Custom Item names. 
+- Added missing 'dirty' flags for changing options in the Options menu. Ensures that changing any option in the Options menu properly flags it as dirty and requests a restart.
+- Added Restart Chummer menu option to Tools menu.
+- Did some general UI cleanup for the Options menu, ensuring that the full text of a book is always visible. 
+- Fixed an error caused by users not entering Drain attributes for their Custom Tradition.
+- Added logic to check whether a character was saved in a later version of Chummer than the current one.
+
+Data Changes:
+
+- Fixed an incorrect spelling for the Personafix gear item.
+- Added Dissonant Echoes from Data Trails, courtesy of gamingharry. As it's not normally possible to become a dissonant technomancer, these echoes have been attached to the Data Trails (Dissonant Echoes) book, and will need to be enabled in the Options menu. 
+- Added content from Lockdown, Shadows in Focus: San Francisco, and the Hong Kong Sourcebook.
+- Added a range category for Shotgun (flechette).
+- Added the Shotgun (Flechette) weapon range.
+- Added missing weapons from the Schattenhandbuch, courtesy of gamingharry.
+- Fixed the display of magic traditions in the core character sheets.
+- Moved the selecttext method back out of AddImprovementCollection. 
+- Altered the Magician, Adept, Mystic Adept, and Technomancer to not need special treatment when adding their special tabs. 
+- Added code to prevent Bone Density and Bone Lacing from being taken together. 
+- Added code to prevent Orthoskin and Dermal Plating from being taken together. 
+
+New Strings:
+
+- Label_VehicleSeats
+- Label_Biography
+- Label_File_Path
+- Label_Roster_File_Name
+- Tab_Roster_Description
+- Tab_Roster_Concept
+- Tab_Roster_Background
+- Tab_Roster_CharacterNotes
+- Tab_Roster_GameNotes
+- Message_Options_Restart
+- Message_OutdatedChummerSave
+
+Changed Strings: 
+
+- Message_ConfirmKarmaExpenseKnowledgeSkill
+- Message_Options_CloseForms
+
+Build 185:
+Application Changes: 
+- Fixed an issue with Sprint distance calculations for Movement. 
+- Fixed a precedence issue with Infected initiative values. 
+- Fixed an issue that prevented lifestyle qualities from being exposed to the character sheets. 
+- Fixed a crash when Chummer hasn't had PDF arguments assigned.
+- Relocated the ChangeText bonus node to be its own improvement type. No real impact for users, but there may be some associated weirdness.
+- Moved the CritterPower improvement nodes for qualities into the Bonus node. This shouldn't affect existing characters, but custom content will need to be adjusted to reflect the change.
+- Moved the AddQualities improvement nodes for qualities, cyberware and such into the Bonus node. This shouldn't affect existing characters, but custom content will need to be adjusted to reflect the change.
+- Moved the method for the SelectText improvement. I don't EXPECT that this will cause any issues, but if you encounter any odd behaviour please let us know.
+- Fixed a bunch of code relating to the addition of qualities by other sources. A side effect of this is that some existing quality pairs may not be removed properly. In most cases this should not present an issue, but if you encounter any odd behaviour please contact us.
+- Altered the code for the OptionalPowers improvement to prevent the selected value from attaching to the associated quality, ie Infected: Vampire (Human) (Enhanced Senses).
+- Added a movement speed bonus for the liminal centaur body.
+- Applied a filter to the mugshot selector that prevents attempting to load things like icons or document files.
+- Added code to the Vehicle Mod Selection Form that enables preventing mods from being listed if they don't match certain requirements.
+- Amended the tooltip for Damage Resistance in Career Mode to display the correct values when not affected by a Damage Resistance Improvement. 
+- Fixed an issue with knowledge skills in Career Mode that prevented changing the skill's Type. Existing characters will have to be manually modified outside of Chummer or refund their expense history to resolve it.
+- Fixed a setting that prevented the SelectVehicleMod form from returning to the previously selected Category when adding items. 
+- Fixed an issue that prevented Penetrating Strike from applying to Knucks with the optional rule for such enabled.
+- Added a workaround for AIs not being able to increase skills linked to physical attributes.
+- Added an option to allow Mystic Adepts to increase power points during career mode. Fixes #1121.
+- Fixed an issue with Awakened characters not gaining their free skills in Priority mode for non-English users.
+- Added a cached displayname to the print method for loaded clips. Accessed via weapon/clips/clip/[name/count].
+- Altered the calculation and display of Limit modifiers that come from 
+- Fixed an issue with the Print method for cyberware that caused it to show irrelevant stats for some cyberware. Fixes #1133.
+- Fixed an issue with loading characters that prevented cyberlimbs from correctly adding to attribute displays.
+- Fixed an issue with linguasofts contributing to point costs for knowledge skills. 
+- Fixed an issue with the Print Expenses option not disabling properly. 
+- Fixed a crash caused by adding lifestyle qualities that don't have a free breakpoint. 
+- Fixed an issue with the character roster not properly showing career karma. Takes effect on next save of the character.
+- Fixed a problem with Laser Weapon ammunition not being properly usable in career mode. 
+- Altered the behaviour of the addqualities bonus node to default to having child qualities contribute to karma expenditure. 
+
+Data Changes: 
+- Fixed the LP cost for the Indoor Arboretum lifestyle quality.
+- Renamed the Sparring Drone from Hard Targets to Sparring Drone(Large).
+- Fixed missing optional powers for the Banshee.
+- Fixed a missing SINNER quality for the Private Investigator/Detective life module.
+- Moved all instances of the addqualities xmlnode into the bonus node. 
+- Fixed an issue with the Gamber Mentor Spirit's skill choice bonus.
+- Added a filter to the Metahuman Adjustment vehicle mod that prevents it from being visible for vehicles and drones that don't have a seat. 
+- Fixed an incorrect cost for the Saeder-Krupp MK-170 Neptune (Large).
+- Fixed missing attribute choices for the Banshee quality. 
+- Added missing content from Howling Shadows, Battle Of Manhattan, The Vladivostok Gauntlet, Splintered State and Shadows In Focus: Butte courtesy of GamingHarry.
+- Added a missing offroadhandling bonus to the Handling Enhancement vehicle mod.
+
+New Strings: 
+- Message_ConfirmKarmaExpenseKnowledgeSkill
+- Checkbox_Option_AllowMysadPowerPointCareer
+- String_MetamagicSkills
+Build 184:
+Application Changes:
+- New ImprovementType: ReplaceAttribute. This allows you to replace the metatypeminimum or metatypemaximum with another value. Intended to be used for infected.
+- Fixed an issue where Chummer warned about free Knowledge Skills still being available instead of Active Skills.
+- Fixed incorrect rounding for Weapon Ranges.
+- Fixed incorrect rounding for Armor capacity. 
+- Fixed incorrect rounding for Armor Mod capacity. 
+- Fixed incorrect rounding for Gear capacity. 
+- Properly allowed the 'free item' checkbox to be visible even in character creation. Fixes #1059.
+- Added an option to toggle all sourcebooks on and off in the Options menu. Fixes #971.
+- Attempting to add gear with the 'Stack' checkbox selected in career mode will only cause items to stack if they have the same child items by default. This prevents loaded spare clips from duplicating, for example. Fixes #1015.
+- Fixed an incorrect label for skill improvements in the Karma/Nuyen Expense History. Fixes #1046.
+- Fixed an issue that caused knowledge skills to revert their type to Interest. Fixes #1056.
+- Added an option to treat arms and legs as the only limbs to average cyberlimb stats off, instead of the skull and torso that are suggested by RAW. As part of this, the options have been broken out into a new XML file, options.xml. Minor design note, I intend to eventually have every calculation variable kept outside of the application logic itself; this will allow GMs to configure their characters as they wish. 
+- Fixed an issue with Adept Powers with multiple levels granted by a Mentor Spirit not apply properly. If your character is affected by this, you should be able to use the Reapply Improvements option in the Special menu to recalculate it properly. Fixes #1057.
+- Added an option to give cyberware a markup cost in career mode. Fixes #1072.
+- Fixed an issue that prevented knowledge skill ratings from updating correctly when adding bonuses from sources like cyberware. Fixes #1073.
+- Fixed a rare issue where the Metagenetic Improvement quality could cause crashes when reapplying Improvements. Fixes #1038.
+- Added a menu option in the Special menu to confirm that a character is ready to move into Career mode. Fixes #1053.
+- Fixed an issue that prevented more than one Spare Clip from adding additional Ammo slots. 
+- Fixed an issue that prevented dicepool/rating modifiers from being visible to character sheets. 
+- Added a Display Category for skill categories. In practice, this means that printouts will use the localised name for skill categories instead of the default English. If you need to use the English string in a character sheet for some reason, use the value skillcategory_english instead. 
+- Fixed an issue with adept powers that have specified maximum ranks causing a crash.
+- Fixed an issue where changing your priority selection would remove MAG/RES-linked skills. 
+- Fixed a issue where Chummer would crash if, while searching for a spell, no matches was found.
+- Added a character roster to manage characters. There is an option to specify a folder to monitor in the Options menu, under Character and Printing. 
+- Fixed a crash issue for characters that have cyberlimbs. 
+- Fixed some crash issues with custom PACKs kits with lifestyles.
+- Fixed some issues with adding multiple non-Ammunition items to other items, ie adding trauma patches to a medkit. May have some issues, but should be functional. Fixes #814.
+- Fixed a crash issue caused by adding too many Enemies in creation mode. 
+- Added some code to suppress errors caused by faulty XSL transforms in character sheets. 
+- Implemented the Blackmail and Family options for contacts. 
+- Removed some code from the SelectAttributes improvement that caused it to pass the selected value up to the bonus source. Generally speaking, prevents Infected qualities from getting (BOD) or whatever added to their treenode.
+- Added a new Improvement Type: MovementMultiplier. This is used to increase or decrease the multiplier for Running and Sprinting from x2/x4. 
+- Fixed a UI issue that prevented attribute bonuses from showing properly if the value made it into double digits.
+- Changed the code to calculate character movement rates. To do this, I've added three attributes to the metatype: Walk, Run and Sprint. Each of these is split into three number (Walk, Swim and Fly in order). 
+- Temporarily removed the CalculatedMovementSpeed tooltip from caeer and creation mode until it gets refacted. 
+- Added a workaround to prevent crashes when loading characters with empty knowledge skills. Fixes #1099.
+- Refactored how the PDF options work; instead of being hard-coded with a bunch of check-boxes, it's now possible to generate your own parameters. Standard parameters have already been included in options.xml, but the default options are not necessarily a match for your previous settings. 
+- The "ignoreprecedence" improvement attribute has been renamed to "precedence-1". 
+- The initiativepass and initiativepassadd improvements now utilise precedence values to manage their stacking; this allows adding Improvements that will always apply, such as the Infected Initiative die bonuses. 
+- Fixed an issue with Cyberlimbs that caused a crash when printing.
+- Fixed an issue that prevented the Knowledge/Contact multiplier house rules from enabling correctly.
+- Changed the string Tip_SkillsKnowledgeSkills to display the correct multiplier entry.
+- SHOULD have fixed an issue where Active Skill controls would overlap the Skill Group controls while in higher-DPI settings, blocking the karma numericupdown in creation mode.
+- Added proper translation for the quality nodes in the Select Advanced Lifestyles form.
+- Fixed an issue with the Matrix condition monitor.
+
+Data Changes:
+- Fixed the Infected qualities to work according to the rules. Characters with previous versions of the quality should reapply their improvements, characters that used the terrible metavariant idea will not load properly and should be rebuilt from scratch. If you've been affected by this, please get in contact with me and I'll fix your character for you. Mostly fixes #689.
+- Removed the Infected metavariants.
+- Added a missing bonus node to the YNT Softweave armour mod.
+- New XML file, options.xml. Used to store values for configurable default settings. 
+- Fixed missing statistic weaknesses for various Infected qualities. Fixes #689.
+- Fixed an issue with the Deformity(Quasimodo) quality that caused it to affect Perception incorrectly. Fixes #1087.
+- Added Naga Venom, and corrected page references for Hard Targets Toxins. 
+- Corrected the fire mode for the Ares Vigorous Assault Cannon.
+- Fixed an issue with the Reaction Optimization bioware not applying its initiative bonus. 
+- Added a requirement for the Reaction Enhancers cyberware in order to take Reaction Optimization.
+- Fixed an issue with the Infected: Vampire quality that caused a crash. 
+- Removed old Metavariant entries for Infected metavariants from the Priority sheet.
+- Added the appropriate Initiative and Movement Multiplier bonuses for the Bandersnatch, Dzoo-Noo-Qua, Goblin, Harvester, Loup-Garou, Mutaqua, Nosferatu, Vampire and Wendigo. 
+
+New Strings:
+- Button_ToggleSourcebooks
+- String_LimbCount4
+- Menu_ValidCharacter
+- Message_ValidCharacter
+- MessageTitle_ValidCharacter
+- String_CharacterRoster
+- Label_Options_CharacterRoster
+- Node_SelectAdvancedLifestyle_FreeMatrixGrids
+- Node_SelectAdvancedLifestyle_Entertainments
+
+Changed strings: 
+- Tip_IncreaseGearQty
+- Tip_SkillsKnowledgeSkills
+
+New Sheet:
+- Added a new character sheet, only showing Skills with Rating greater than 0.
+
+Build 183:
+Application Changes:
+- Fixed the dolphin mentor spirit not giving a bonus on spells of the Health category.
+- Added a selector for the maximum karma spent on Nuyen in Karma and Life Modules. Fixes #999.
+- Fixed an issue with the Priority D Aspected Magician. Fixes #992.
+- Set the Create Backstory button to be invisible for character generation methods other than Life Modules. Fixes #987.
+- Added a missing bonus for the Impassive quality. Fixes #984.
+- Removed an extraneous Recoil Group from the Electronic Firing Accessory. Fixes #983.
+- Added the ability to modify user-created LimitModifiers. Closes #979.
+- Fixed an issue with the D-priority adept. Fixes #1005.
+- Added some basic error handling to prevent a crash if trying to update Chummer from behind a firewall or proxy. Fixes #989.
+- Re-enabled the house-rule to treat metahuman minimums as 1 for karma costs. Fixes #1004.
+- Fixed a crash caused by removing life modules,
+- Fixed an issue with loading Priority characters caused by an incorrectly saved maximum nuyen value.
+- Fixed the ability for adpets with the Adept Spell power to increase their Spellcasting skill rank. Fixes #990.
+- Changed the Adept Spell power to prompt for the spell instead of a text value.
+- Altered the Select Spell form to allow ignoring requirements such as being magician-enabled to support this.
+- Altered the UnlockSkills improvement to allow for specifying the Spellcasting skill, rather than the full compliment of magical skills.
+- Fixed a crash caused by removing life modules while in creation mode. 
+- Added support for the free matrix grid connections added by Hard Tatrgets to advanced lifestyles. Fixes #963. 
+- Fixed an issue with lifestyle qualities crashing if they don't have a restriction. Fixes #1012.
+- Set the Adept Way Discount numericupdown control in creation mode to be invisible if the character is not MAG-enabled. Fixes #836.
+- Updated the Capacity calculation for cyberware to include any attached Gear items. Fixes #896.
+- Fixed an issue that prevented the MCT-Nissan Rotodrone from getting the three extra modification slots expected when not using the vehicle modification rules intrroduced in Rigger 5.0. Fixes #943.
+- Skill Filter names is now read from data files instead of hardcoded.
+- Added an option to download Nightly updates via the Update system instead of just default releases.
+- The changelog will now filter itself based on the most recent build version, so Release builds won't see updated text from the Nightlies. Fixes #1013.
+- Fixed an issue with Essence Loss that caused characters to burn out their Magic or Resonance when hitting 0 value, rather than 0 maximum. Fixes #801.
+- Altered the functionality of the optional rule to reduce Karma costs based on Essence Loss to reflect the above change. 
+- Fixed an issue that prevented Aspected Magicians taking the Conjuring skill group from actually receiving the skills.
+- Fixed an issue with undoing expense entries for skills. Fixes #988, fixes #1028.
+- Fixed an issue that prevented page offsets from being saved properly. Existing options files may need to be reconfigured. Fixes #1027.
+- Fixed an issue with application locations causing some problems with accessing data files. Fixes #597.
+- Improved the tooltip indications for when a skill is affected by cyberlimb stats. Fixes #1009.
+- Fixed a parsing error when verifying data files that caused a crash. Fixes #935.
+- Fixed an error that prevented Cyber-weapoons such as spurs from being properly flagged as such. Fixes #382.
+- Added a filter to show/hide free karma and nuyen entries from the expense log list in career mode. Fixes #952.
+- Fixed the implementation of the Custom Fit (Stack) rule to support stacking properly, including the creation of armor encumbrance penalties. May still not work properly, but seems to be per RAW. Partially implements #944.
+- Implemented an ignoreprecedence uniquename for Improvements. If present, this will ignore the standard behavior of precedence0 improvements that would normally ignore other sources. Fixes #944.
+- Fixed an uncalculated armor rating label on the condition monitor in career mode. Fixes #1043.
+- Added the "Pilot Exotic Vehicle" skill. TODO: Ensure spelling and page reference.
+
+Data Changes: 
+- Fixed an incorrect page reference for the Metatype Reduction biowares. 
+- Removed an extraneous bonus node from the Ork Metatype Reduction cyberware that made it cost karma.
+- Added life modules from Rigger 5.0, courtesy of SeanPGorman. Fixes #960.
+- Fixed an issue that caused the Suprathyroid gland and Muscle Augmentation biowares to stack. Fixes #913.
+- Added the allowed gear-categories for Sensors to cyberlimbs. Fixes #896.
+- Fixed the Essence cost for the German version of the Skilljack to be 0.1 Essence. 
+- Changed the source for Reagents to be the Shadowrun core book instead of Shadow Spells.
+- Fixed an issue that prevented the standard Weapon Mount from Shadowrun 5 from taking Machine Pistols and Submachine Guns.
+- Altered the Precedence setting for the following bioware, cyberware, powers and qualities, as they were stacking improperly.
+-- Muscle Augmentation bioware
+-- Suprathyroid Gland bioware
+-- Synaptic Booster bioware
+-- Boosted Reflexes bioware
+-- Synaptic Acceleration bioware
+-- Muscle Replacement cyberware
+-- Reaction Enhancers cyberware
+-- Wired Reflexes cyberware
+-- Move-by-Wire System bioware
+-- Improved Reflexes 1,2,3 power
+-- Lightning Reflexes quality
+- Added a missing MAG attribute to the Drake qualities. Fixes #1034.
+- Added the Portable Chemical Injectors from Chrome Flesh's sidebar on page 176. CGL, if you're going to use tables then please please PLEASE include all your things in them! Fixes #176.
+- Added the missing Off-Road Tires from Rigger 5.0. Fixes #1039.
+- Fixed incorrect weapon category limitations for the weapon mounts from Rigger 5.0. Fixes #1048.
+- Fixed the Improved Potential powers to properly increase their associated Limits. Fixes #1047.
+- Fixed an incorect source setting for the Periscope gear item. Fixes #1050.
+
+New Strings:
+- Warning_NoLimitFound
+- String_No_Update_Found
+- Warning_Update_CouldNotConnect
+- Skill_SortAlphabetical
+- Skill_SortRating
+- Skill_SortDicepool
+- Skill_SortLowerDicepool
+- Skill_SortAttributeValue
+- Skill_SortAttributeName
+- Skill_SortGroupName
+- Skill_SortGroupRating
+- Skill_SortCategory
+- Checkbox_ShowFreeEntries
+
+Changed Strings:
+- Checkbox_Options_UseTotalValueForFreeContacts. Fixes #981.
+- Checkbox_Options_SpecialKarmaCost
+
+Build 182:
+Application Changes:
+- Fixed a crash when creating MAG/RES characters using Priority/Sum-to_Ten. Fixes #922.
+- Added Cyberlimbs as Plugins for Modular Connectors.
+- Fixed an issue where Chummer would crash when loading a Life Module character. Fixes #925.
+- Fixed an issue with taking specialisations in karmagen without the house rule for free karma points enabled. Fixes #929.
+- Fixed the total cost of vehicles to include discounts from the Dealer Connection quality. Fixes #934.
+- Fixed an issue that prevented the Prototype transhuman improvements from being removed. This fix does not apply to older characters.
+- Fixed an issue that prevented knowledge skills from loading properly. 
+- The Crash Handler form's Crash ID is now selectable.
+- The Crash Handler now requests permission from the user before submitting a crash report. 
+- Added a validation option to prevent characters from having multiple Native Language skills from entering career mode. Fixes #947.
+- Fixed a crash issue caused by improvements with selectskill trying to use an Exotic skill. Fixes #921.
+- Fixed a rendering issue that prevented Exotic Skills from showing up in sorted lists.
+- Fixed a misleading reference to Special Attributes when validating your character.
+- Fixed a crash issue with the Incompetent quality. Fixes #959.
+- Added code to allow override XML files to use the ID node instead of the Name tag when finding an item to replace. Fixes #957.
+- Improved the Options form to only prompt for saving if changes were made.
+- Added a handler to check if there's a mismatch between a loaded character's used sourcebooks and the application's selected sourcebooks. Won't affect characters that haven't been loaded before now, changes may also be overwritten by loading the character in older versions. Closes #884.
+- Increase knowledge skill rating and add knowledge skill specialization now has the right point
+- All knowledge skills don't cost -1 karma anymore.
+- Active Hardwires work again.
+- Now promts for a name for new knowledge skills in career mode, instead of them being unnameable.
+- Added onClick link for Skill-List.
+- Gear that adds bonuses to skills now show up as a name instead of an id.
+- Omae hid behind an options menu as the other end is outside our control and is starting to give errors. Unless a large amount of intrest is shown, a replacement won't be forthcomming.
+- Fixed a Bug, where Knowledge Skill Specializations would not cost Knowledge Skill Points, even with activated house rule.
+- Fixed a bug where mixed points and karma in skill groups would pay for one more karma level than intended
+- Fixed a bug where changes to cyberware wouldn't update skill dicepools
+- Fixed a bug where spending any karma on a skill prevented getting a specialization with skillpoints
+- Fixed a weird bug where German knowledge skill types would appear sorted but would actually use the English order.
+- Fixed a bug where deleting a knowledge skill would not restore the spent points/ karma.
+
+Data Changes:
+- Fixed a crash when creating an e-ghost AI. Fixes #918.
+- Added the missing Nausea Gas toxin SR5. Fixes #940.
+- Fixed an issue that prevented the Voice Warper gear from Hard Tartgets from being available. Fixes #962.
+- Hawk eye now gives an 1 dice bonus to perception
+- The Armor tab under gear has been renamed to "Clothing and Armor" to match the core rulebook
+- Added several German translations provided by HaukeW.
+
+New Strings:
+- String_AttributeESSShort
+- String_AttributeESSLong
+- Message_OverLanguageLimit
+- Tip_Omae_Warning
+- Checkbox_Options_OmaeEnabled
+
+Changelog Changes:
+changelog build numbers after build 178 now match the build they are for.
+
+Build 181:
+Application Changes:
+- Fixed an issue with skills not rendering in a localized language when selecting skill groups for Aspected Magicians. Fixes #867.
+- Fixed a crash caused by adding an exotic weapon without having the relevant exotic weapons skill. Fixes #888.
+- Fixed a crash caused when loading a character that has a tradition that isn't being used. Fixes #893.
+- Changed the HTML doctype of all existing character sheets to support CSS3. Fixes #568.
+- Changed the button string for adding an initiate grade in creation mode. 
+- Skills can now have notes applied to their tooltip. To do this, right-click on the skill name and click the Add Notes button. 
+- Fixed a bug where skill improvements could stack if using the Change Priority Selection menu. Note: characters that have already been affected by this bug will have to be edited manually to remove the improvements, which will have a sourcename of Heritage and an improvedname of whatever the skill is. Fixes #880.
+- Fixed a bug where changing between technomancers and mages would leave both resonance and magical skills available. Fixes #890.
+- Altered the uniquename for the Damage Resistance improvement to allow stacking, instead of using the highest single bonus. This may be wrong, but I can't find any RAW statements against it. Fixes #879.
+- Fixes a UI localization issue where skill attributes defaulted to BOD. Fixes #897.
+- Fixed a UI issue that stopped a character as needing to be saved if the skills were updated in career mode. Fixes #899.
+- Added Option for not showing metagenetic qualities. Fixes #889.
+- Added Physical Limit as accuracy for infected natural weapons.
+- Fixed freezing when removing a Specialization and Skill Dicepools now refresh when changing the Specialization. Fixes #876.
+- Now shows Source when selecting a normal lifestyle.
+- Fixed a bug where Knowledge Specializations didn't cost Knowledge Skill Pints. Fixed #902.
+- Fixed a bug where the attribute tooltip would show qualities that didn't alter the attribute value or augment it. Fixed #901.
+- Added different PDF-Opening parameters for Linux/Unix/etc.
+- Fixed a Bug where Specializations had no Karma costs in Karma build mode. Fixes #908.
+- Fixed a Bug where Karma cost of Magic/Resonance were calculated wrongly when Essence Loss occurred. Fixes #912.
+- Improved the update method to prevent update check loops. 
+- Improved the handling of changing priority selections to remember previous selections. Not all settings will be immediately available for existing characters. Fixes #709.
+
+Data Changes: 
+- Fixed an issue with mystic adepts not unlocking the appropriate magical skills. Fixes #869.
+- Changed how existing character sheets render mugshots when saved as HTML. Fixes #817.
+- Added Textfield when selecting Grid Subscription Lifestyle quality. Fixes #875.
+- Corrected limit note for vision enhancement cyberware. Fixes #887.
+- Added missing karma values for infected metatypes in priority selection.
+- Added Reach for all infected metatypes to prevent crashes.
+- Reorganized Data Trails AI Qualities and added missing ones.
+- Added Chrome Flesh BTLs. Fixes #885.
+- Fixed an incorrect limitation on the Home Ground quality. Fixes #904.
+
+Translation Changes:
+- Updated the German translation files, courtesy of HaukeW.
+
+Build 180:
 Application Change:
+- Total rewrite of skills. 
+	* Eliminated a lot (all?) old bugs
+	* Opening the skills tab first time is now signifigantly faster
+	* Searchbox for skills
+	* Custom sorting of skills. Sort by Rating, Dicepool, Category and more
+	* Skill tooltip now display dicepools for cyberarms
+	* In Career mode, it is possible to calculate the dicepool using another attribute that the default one.
+	* Some minor UI changes to acomodate new skill features
+	* Skills that cannot be defaulted has their name in italics.
+	* Easier maintainance
+	* Reduced file size
 - First things first, good news bad news. Good news, automatic updates will be functional again for updates after 179. Bad news, due to a change in implementation of the automatic updates this brings an end to .Net 4.0 support. Chummer will no longer launch without .Net 4.5 or higher installed on your system. 
+- Rewrote crash handling. Now dumps most/all internal state, making debugging easier.
 - Built-in weapon accessories are automatically assigned to the Internal accessory slot by default. If a weapon accessory should take up a slot naturally, just add a <mount> value to the accessory. This change only affects newly created/purchased weapons, so any existing weapons will need to be altered manually or deleted and re-added. Fixes #566.
 - Ammunition can now add and replace the fire modes of weapons, using the firemode and firemodereplace nodes of weaponbonus. This change only takes effect during career mode, and is currently used exclusively for the Taurus Omni-6's heavy ammo type. Fixes #577.
 - Fixed a crash issue caused by changing priority selection in Sum to Ten mode. Fixes #572.
@@ -16,7 +440,6 @@ Application Change:
 - Fixed a string formatting issue that prevented Accuracy modifications from adept powers from working properly for translated Chummer.
 - Fixed an issue that prevented priority/sum-to-ten from using the gameplay options for their nuyen limit.
 - Sum to Ten and Priority now use the same form for character generation. Doesn't mean anything particularly interesting for you guys, but may reduce or introduce some interesting new bugs. 
-- Did some shenanigans to make it not look like mundane characters have resonance, magic or depth attributes. There are a couple of caveats with this; the major one is that if you add a quality like Adept or Technomancer, the Base value will revert to 1. Actual value of the stat reverts to 0 properly, but keep that in mind. It's not as tidy as I'd like.
 - Contacts can now be dragged around and reordered according to your whims. It's only really easy to do when the control you want to move is expanded. 
 - Armor can now have a Rating; currently this is used exclusively for the cloaks from Hard Targets.
 - Fixed the percentage discount for basic lifestyles.
@@ -64,6 +487,47 @@ Application Change:
 - Added support for enabling calculated Public Awareness, per the rules from SR4. Hides the tooltips and calculations if not in use.
 - Fixed the creation method for custom packs kits to not treat included mods as being purchased. Should fix #707 and fix #691.
 - Save files is now in UTF-8 instead of UTF-16. This should not have any visible impact but it is more tool frindly and leads to smaller files
+- Fixed an issue where qualities that add other qualities for free didn't discount properly. Fixes #762.
+- Fixed an issue where default build methods other than Karma would cause a crash while launching the Options menu. Fixes #796.
+- Fixed an issue with the Acceleration Enhancement modification causing a crash when printing. Fixes #772.
+- Fixed an occasional issue in the Options menu where a null default character sheet caused a crash. Fixes #774.
+- Added house rules to gain free contacts and knowledge skills based on the total value of your CHA or LOG+INT. Fixes #783.
+- Fixed a bonus point calculation issue for YNT Softweave and Cloaks. 
+- Fixed a crash issue related to the Overclocker quality in career mode.
+- Fixed a loading issue for commlinks with armor capacity values. 
+- Fixed an issue where removing a Foci before unbonding it would leave the Improvement enabled. Fixes #660. Note: Characters that have already been affected by this bug will need to manually remove the improvement. 
+- Fixed the ability to switch between adepts, magicians or technomancers when changing priority selections. Fixes #745.
+- Added a method for grouping armour value improvements with the 'group' attribute. Fixes #758.
+- Fixed an issue that prevented some old characters from being saved. Fixes #806.
+- Added and consolidated some code to update initiation costs and discounts properly. Fixes #810.
+- Implemented a minor quality of life update; the most recently used folder location is not stored for mugshots, per character. Fixes #458.
+- Contacts, spirits and pets can now be linked to non-Chummer files; when clicking on the Open Character Sheet button, the file will be opened in the default application for that extension. Fixes #636.
+- Prime runners now get twice the amount of free contacts compared to standard
+- Essence Hole value is not impacted by grade or ware essence cost reductions. You don't get a little essence back each time now. Fixes #673
+- "Test Subject" and "Factory Child Worker" life modules now give bonus nuyen. Fixes #811
+- Fixed a crash caused when saving characters without mugshots.
+- Fixed an incorrect value for binding spirit services. Fixes #827.
+- Fixed karma costs for the Inspired quality from Sail Away, Sweet Sister in karmagen. Fixes #828.
+- Added a close icon for the Options window, allows you to cancel out of saving any changes you make. Should fix #700.
+- Chummer now correctly uses the "Characters don't gain Karma after Quality Limit" option in Karma and Life Module mode.
+- Removing the "MEtagenetic Improvement" quality now works correctly in Karma and Life Module mode. Fixes #234.
+- Myostatin Inhibitor now correctly reduces Karma Cost of raising Strength. Fixes #365.
+- Chummer now correctly uses the "Ignore Art requirement" option for showing metamagics. Fixes #614.
+- Fixed crash when checking "Limited Spell" without selecting a Spell.
+- All Armors, Cyberware, Bioware, and Gear should now add correct limit modifiers. Fixes #625.
+- Added Attribute Display for Cyberlimbs.
+- Added option to not use Cyberlimbs for augmented Attribute calculation.
+- Rewrote RedlinerCheck
+- Added Redliner/Cyber-Singularity Seeker Quality names to ToolTip
+- Added Redliner bonus to cyberlimbs
+- Added backwards Compability with old Redliner implementation (Only need to load once with the new Version to remove artifacts)
+- Fixed crashes when adding a PACK. Fixes #843.
+- Fixed Black Market Discount not decreasing Gear/Cyberware/Armor/Weapon/Vehicle Cost. Fixes #845.
+- Fixed Hanuman agility and changed Low-Light to thermographic vision. Fixes #847. Fixes #848.
+- Fixed limitation on Karma to nuyen when ignoring character creation rules. Fixes #846.
+- Fixed crash when loading a character with more than 200 Karma to Nuyen. Fixes #850.
+- Fixed issue where cyberlimb stats were increased with cyber-singularity seeker. Fixes #857.
+
 
 Data Change:
 - Added missing required values for the Hospitalized lifestyles.
@@ -114,6 +578,22 @@ Data Change:
 - Fixed an incorrect Limit value for the Chameleon Skin bioware.
 - Removed the Distinctive Style quality from the Gnome metavariant. 
 - Removed an extra Victorinox Collapsible Hatchet from the weapons XML.
+- Fixed incorrect capacity values for the Responsive Interface Gear.
+- Added missing GUIDs for some AI qualities.
+- Fixed missing quality restrictions for AIs.
+- Added a missing concealment bonus for the Hidden Gun Arm Slide. Fixes #723.
+- Fixed cost and availability for Monofilament Chainsaw, Blast Shield, and Battering Rams. Fixes #808.
+- Reverted precedence 0 settings for dermal plating cyberware.
+- Reverted precedence 0 settings for orthoskin bioware.
+- Reverted precedence 0 settings for dermal alteration SURGE qualities.
+- Added a missing skillwire rating to Move-By-Wire. 
+- Fixed an incorrect AP value for Stick-n-Shock ammo. Fixes #818.
+- Added an unarmed AP value equal to rating for the adept power Penetrating Strike. Fixes #829.
+- Fixed incorrect Essence values for bio-tattoos. Fixes #834.
+- Altered the improvements for the Missile Mastery power. Fixes #832.
+- Fixed a typo in the name for LED tattoos.
+- Fixed an incorrect ammo value for the RPK HMG.
+- Added German Street Grimoire to books List. Fixes #841.
 
 New Strings:
 - Message_DeleteCalendarWeek
@@ -130,7 +610,10 @@ New Strings:
 - String_Sleaze
 - String_DataProcessing
 - Checkbox_Options_UseCalculatedPublicAwareness
-
+- Checkbox_Options_UseTotalValueForFreeKnowledge
+- Checkbox_Options_UseTotalValueForFreeContacts
+- Message_Options_SaveForms
+- Checkbox_Options_UseCyberlimbCalculation
 Removed Strings:
 - Checkbox_Options_DontDoubleQualities
 - Tip_OptionsDontDoubleQualities
@@ -293,7 +776,7 @@ Build 173:
 Application Change:
 - Dumpshock link changed to issue tracker.
 - A First-pass effort at adding a filter for Missions-restricted items has been added to the Options menu. Will be getting a later review to enable better filtering of the qualities, but for now it's just a global option.
-- Fixed a bug with life modules where Tír Tairngire wouldn't show demographics.
+- Fixed a bug with life modules where TÃ­r Tairngire wouldn't show demographics.
 - Chummer now handles essence holes automatically. Old items may need to be re-added.
 - College Education/School of Hard Knocks/Linguist and Jack of All Trades work properly for knowledge skills during character creation. Again. 
 - Most of the functionality for Infected has been implemented. Todo: Fix up the free attribute gain to not use qualities because it's ugly, and put in the data files content.
@@ -310,7 +793,7 @@ Data Change:
 - Rank Quality added.
 - The Debug Lifestyle has been hidden.
 - Lifemodules no longer contains a "Magical Education (Archetype)".
-- Tír is now spelled correctly a few more places.
+- TÃ­r is now spelled correctly a few more places.
 - Equipment, Weapon and Ammo PACKs from run faster added.
 	There are a couple of important caveats with this:
 	First, we generally haven't bothered to input PACKs that are a single item. If someone would like to write them up then that's fine, but there's only so many hours of data entry one can do. 
@@ -713,7 +1196,7 @@ Application Change:
 
 Build 5.150
 Data change:
-- Nocturna and Xapiri Thëpë quality-related crash fixed.
+- Nocturna and Xapiri ThÃ«pÃ« quality-related crash fixed.
 Application Change:
 - Lazy workaround fix for karmagen attributes not increasing properly.
 
@@ -800,7 +1283,7 @@ Build 5.137 (beta)
 - Fixed the AP modifier for Gel Rounds.
 - Changed the Gecko Grip weapon modification to not require that the weapon have a Stock slot.
 - Added the missing Strike the Darkness and Neijia Martial Art Techniques.
-- Fixed the price of the Armanté Suit and Dress.
+- Fixed the price of the ArmantÃ© Suit and Dress.
 - Fixed a formatting problem with the skills list so that the list should now scroll properly.
 - Fixed a bug preventing leftover nuyen from being carried over after character creation.
 - Added the ability to enter notes for Martial Art Techniques which are also shown on the character sheet.

@@ -8,7 +8,7 @@
 		<xsl:text disable-output-escaping="yes"><![CDATA[<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">]]></xsl:text>
 		<html>
 			<head>
-				<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+				<meta http-equiv="x-ua-compatible" content="IE=Edge"/>
 				<title><xsl:value-of select="name" /></title>
 				<style type="text/css">
 					*
@@ -818,7 +818,7 @@
 													<xsl:value-of select="rating" />
 												</td>
 												<td width="10%" style="text-align:center;" valign="top">
-													<xsl:value-of select="attributemod" /> (<xsl:value-of select="attribute" />)
+													<xsl:value-of select="attributemod" /> (<xsl:value-of select="displayattribute" />)
 												</td>
 											</tr>
   </xsl:for-each>

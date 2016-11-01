@@ -46,7 +46,6 @@ namespace Chummer
 		{
 			InitializeComponent();
 			LanguageManager.Instance.Load(GlobalOptions.Instance.Language, this);
-			chkFreeItem.Visible = blnCareer;
 			lblMarkupLabel.Visible = blnCareer;
 			nudMarkup.Visible = blnCareer;
 			lblMarkupPercentLabel.Visible = blnCareer;
@@ -406,17 +405,18 @@ namespace Chummer
             {
                 int intCost = Convert.ToInt32(objXmlVehicle["cost"].InnerText);
 
-				if (chkBlackMarketDiscount.Checked)
-	            {
-					intCost = Convert.ToInt32(Convert.ToDouble(intCost, GlobalOptions.Instance.CultureInfo) * 0.9);
-				}
-
-                intCost = Convert.ToInt32(Math.Ceiling(Convert.ToDouble(intCost, GlobalOptions.Instance.CultureInfo) * dblCostModifier));
+				intCost = Convert.ToInt32(Math.Ceiling(Convert.ToDouble(intCost, GlobalOptions.Instance.CultureInfo) * dblCostModifier));
 
                 // Apply the markup if applicable.
                 double dblCost = Convert.ToDouble(intCost, GlobalOptions.Instance.CultureInfo);
                 dblCost *= 1 + (Convert.ToDouble(nudMarkup.Value, GlobalOptions.Instance.CultureInfo) / 100.0);
-                intCost = Convert.ToInt32(dblCost);
+
+				if (chkBlackMarketDiscount.Checked)
+				{
+					dblCost *= 0.90;
+				}
+
+				intCost = Convert.ToInt32(dblCost);
 
                 if (chkFreeItem.Checked)
                     intCost = 0;

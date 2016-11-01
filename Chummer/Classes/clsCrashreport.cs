@@ -35,11 +35,7 @@ namespace Chummer
 		{
 			if (Debugger.IsAttached) return;
 
-			if (
-				MessageBox.Show("Chummer5a crashed.\nDo you want to send a crash report to the developer?", "Crash!",
-					MessageBoxButtons.YesNo) == DialogResult.Yes)
-			{
-				CrashReport report = new CrashReport(Guid.NewGuid())
+			CrashReport report = new CrashReport(Guid.NewGuid())
 					.AddDefaultData()
 					.AddData("exception.txt", e.ExceptionObject.ToString());
 
@@ -47,7 +43,7 @@ namespace Chummer
 
 				try
 				{
-					string strFile = Path.Combine(Environment.CurrentDirectory, "chummerlog.txt");
+					string strFile = Path.Combine(Application.StartupPath, "chummerlog.txt");
 					report.AddData("chummerlog.txt", new StreamReader(strFile).BaseStream);
 				}
 				catch(Exception ex)
@@ -64,7 +60,7 @@ namespace Chummer
 				//try to include default settings file
 				try
 				{
-					string strFilePath = Path.Combine(Environment.CurrentDirectory, "settings", "default.xml");
+					string strFilePath = Path.Combine(Application.StartupPath, "settings", "default.xml");
 					report.AddData("default.xml", new StreamReader(strFilePath).BaseStream);
 				}
 				catch (Exception ex)
@@ -75,7 +71,6 @@ namespace Chummer
 
 				report.Send();
 				MessageBox.Show("Crash report sent.\nPlease refer to the crash id " + report.Id);
-			}
 		}
 
 		private List<KeyValuePair<String, Stream>> values; 

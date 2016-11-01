@@ -1,4 +1,4 @@
-/*  This file is part of Chummer5a.
+﻿/*  This file is part of Chummer5a.
  *
  *  Chummer5a is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,12 +16,13 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
-﻿using System;
+ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using System.Xml;
 using System.Xml.XPath;
+ using Chummer.Backend.Equipment;
 
 namespace Chummer
 {
@@ -35,19 +36,23 @@ namespace Chummer
 		private int _intModMultiplier = 1;
 		private string _strInputFile = "vehicles";
 		private int _intMarkup = 0;
+		private static string _strSelectCategory = "";
 
 		private string _strAllowedCategories = "";
 		private bool _blnAddAgain = false;
 
+		private XmlNodeList objXmlCategoryList;
 		private XmlDocument _objXmlDocument = new XmlDocument();
 		private readonly Character _objCharacter;
+		private bool _blnBlackMarketDiscount;
+		private string _strLimitToCategories;
+		private List<ListItem> _lstCategory = new List<ListItem>();
 
 		#region Control Events
 		public frmSelectVehicleMod(Character objCharacter, bool blnCareer = false)
 		{
 			InitializeComponent();
 			LanguageManager.Instance.Load(GlobalOptions.Instance.Language, this);
-			chkFreeItem.Visible = blnCareer;
 			lblMarkupLabel.Visible = blnCareer;
 			nudMarkup.Visible = blnCareer;
 			lblMarkupPercentLabel.Visible = blnCareer;
@@ -57,6 +62,66 @@ namespace Chummer
 
 		private void frmSelectVehicleMod_Load(object sender, EventArgs e)
 		{
+			// Load the Mod information.
+			_objXmlDocument = XmlManager.Instance.Load(_strInputFile + ".xml");
+
+			// Populate the Weapon Category list.
+			if (!string.IsNullOrEmpty(_strLimitToCategories))
+			{
+				string[] strValues = _strLimitToCategories.Split(',');
+
+				// Populate the Category list.
+				XmlNodeList objXmlNodeList = _objXmlDocument.SelectNodes("/chummer/modcategories/category");
+				foreach (XmlNode objXmlCategory in objXmlNodeList)
+				{
+					foreach (string strCategory in strValues)
+					{
+						if (strCategory == objXmlCategory.InnerText)
+						{
+							ListItem objItem = new ListItem();
+							objItem.Value = objXmlCategory.InnerText;
+							if (objXmlCategory.Attributes != null)
+							{
+								if (objXmlCategory.Attributes["translate"] != null)
+									objItem.Name = objXmlCategory.Attributes["translate"].InnerText;
+								else
+									objItem.Name = objXmlCategory.InnerText;
+							}
+							else
+							{
+								objItem.Name = objXmlCategory.InnerXml;
+							}
+							_lstCategory.Add(objItem);
+						}
+					}
+				}
+			}
+			else
+			{
+				objXmlCategoryList = _objXmlDocument.SelectNodes("/chummer/modcategories/category");
+
+				foreach (XmlNode objXmlCategory in objXmlCategoryList)
+				{
+					ListItem objItem = new ListItem();
+					objItem.Value = objXmlCategory.InnerText;
+					if (objXmlCategory.Attributes != null)
+					{
+						if (objXmlCategory.Attributes["translate"] != null)
+							objItem.Name = objXmlCategory.Attributes["translate"].InnerText;
+						else
+							objItem.Name = objXmlCategory.InnerText;
+					}
+					else
+						objItem.Name = objXmlCategory.InnerXml;
+					_lstCategory.Add(objItem);
+				}
+			}
+			SortListItem objSort = new SortListItem();
+			_lstCategory.Sort(objSort.Compare);
+			cboCategory.ValueMember = "Value";
+			cboCategory.DisplayMember = "Name";
+			cboCategory.DataSource = _lstCategory;
+
 			BuildModList();
 
 			chkBlackMarketDiscount.Visible = _objCharacter.BlackMarketDiscount;
@@ -68,6 +133,37 @@ namespace Chummer
 		private void lstMod_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			UpdateGearInfo();
+		}
+
+		private void cboCategory_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			List<ListItem> lstMods = new List<ListItem>();
+			XmlNodeList objXmlModList = null;
+			// Populate the Mod list.
+			if (cboCategory.SelectedValue.ToString() != "All")
+			{
+				objXmlModList =
+					_objXmlDocument.SelectNodes("/chummer/mods/mod[(" + _objCharacter.Options.BookXPath() + ") and category = \"" + cboCategory.SelectedValue + "\"]");
+			}
+			else
+			{
+				objXmlModList =
+					_objXmlDocument.SelectNodes("/chummer/mods/mod[" + _objCharacter.Options.BookXPath() + "]");
+			}
+			foreach (XmlNode objXmlMod in objXmlModList)
+			{
+					ListItem objItem = new ListItem();
+					objItem.Value = objXmlMod["name"].InnerText;
+					if (objXmlMod["translate"] != null)
+						objItem.Name = objXmlMod["translate"].InnerText;
+					else
+						objItem.Name = objXmlMod["name"].InnerText;
+					lstMods.Add(objItem);
+			}
+			lstMod.DataSource = null;
+			lstMod.ValueMember = "Value";
+			lstMod.DisplayMember = "Name";
+			lstMod.DataSource = lstMods;
 		}
 
 		private void nudRating_ValueChanged(object sender, EventArgs e)
@@ -88,6 +184,7 @@ namespace Chummer
 
 		private void cmdCancel_Click(object sender, EventArgs e)
 		{
+			_strSelectCategory = "";
 			this.DialogResult = DialogResult.Cancel;
 		}
 
@@ -174,6 +271,17 @@ namespace Chummer
 			get
 			{
 				return _blnAddAgain;
+			}
+		}
+
+		/// <summary>
+		/// Whether or not the selected Vehicle is used.
+		/// </summary>
+		public bool BlackMarketDiscount
+		{
+			get
+			{
+				return _blnBlackMarketDiscount;
 			}
 		}
 
@@ -342,6 +450,13 @@ namespace Chummer
 		/// </summary>
 		private void BuildModList()
 		{
+
+			// Select the first Category in the list.
+			if (_strSelectCategory == "")
+				cboCategory.SelectedIndex = 0;
+			else
+				cboCategory.SelectedValue = _strSelectCategory;
+
 			foreach (Label objLabel in this.Controls.OfType<Label>())
 			{
 				if (objLabel.Text.StartsWith("["))
@@ -361,42 +476,27 @@ namespace Chummer
 				objXmlModList = _objXmlDocument.SelectNodes("/chummer/mods/mod[(" + _objCharacter.Options.BookXPath() + ") and category != \"Special\" and ((contains(translate(name,'abcdefghijklmnopqrstuvwxyzàáâãäåçèéêëìíîïñòóôõöùúûüýß','ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝß'), \"" + txtSearch.Text.ToUpper() + "\") and not(translate)) or contains(translate(translate,'abcdefghijklmnopqrstuvwxyzàáâãäåçèéêëìíîïñòóôõöùúûüýß','ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝß'), \"" + txtSearch.Text.ToUpper() + "\"))]");
 			bool blnAdd = true;
 			List<ListItem> lstMods = new List<ListItem>();
-			foreach (XmlNode objXmlMod in objXmlModList)
-			{
-				blnAdd = true;
-				/*
-				if (objXmlMod["response"] != null)
+			if (objXmlModList != null)
+				foreach (XmlNode objXmlMod in objXmlModList)
 				{
-					if (Convert.ToInt32(objXmlMod["response"].InnerText) > _intMaxResponse || Convert.ToInt32(objXmlMod["response"].InnerText) <= _objVehicle.DeviceRating)
-						blnAdd = false;
+					blnAdd = true;
+					XmlNode objXmlRequirements = objXmlMod.SelectSingleNode("requires");
+					if (objXmlRequirements != null)
+					{
+						if (_objVehicle.Seats < Convert.ToInt32(objXmlRequirements["seats"]?.InnerText))
+						{
+							blnAdd = false;
+						}
+					}
+
+					if (blnAdd)
+					{
+						ListItem objItem = new ListItem();
+						objItem.Value = objXmlMod["name"].InnerText;
+						objItem.Name = objXmlMod["translate"]?.InnerText ?? objXmlMod["name"].InnerText;
+						lstMods.Add(objItem);
+					}
 				}
-				if (objXmlMod["system"] != null)
-				{
-					if (Convert.ToInt32(objXmlMod["system"].InnerText) <= _objVehicle.DeviceRating)
-						blnAdd = false;
-				}
-				if (objXmlMod["firewall"] != null)
-				{
-					if (Convert.ToInt32(objXmlMod["firewall"].InnerText) <= _objVehicle.DeviceRating)
-						blnAdd = false;
-				}
-				if (objXmlMod["signal"] != null)
-				{
-					if (Convert.ToInt32(objXmlMod["signal"].InnerText) > _intMaxSignal || Convert.ToInt32(objXmlMod["signal"].InnerText) <= _objVehicle.DeviceRating)
-						blnAdd = false;
-				}
-				*/
-				if (blnAdd)
-				{
-					ListItem objItem = new ListItem();
-					objItem.Value = objXmlMod["name"].InnerText;
-					if (objXmlMod["translate"] != null)
-						objItem.Name = objXmlMod["translate"].InnerText;
-					else
-						objItem.Name = objXmlMod["name"].InnerText;
-					lstMods.Add(objItem);
-				}
-			}
 			SortListItem objSort = new SortListItem();
 			lstMods.Sort(objSort.Compare);
 			lstMod.DataSource = null;
@@ -413,6 +513,8 @@ namespace Chummer
 			_strSelectedMod = lstMod.SelectedValue.ToString();
 			_intSelectedRating = Convert.ToInt32(nudRating.Value);
 			_intMarkup = Convert.ToInt32(nudMarkup.Value);
+			_blnBlackMarketDiscount = chkBlackMarketDiscount.Checked;
+			_strSelectCategory = cboCategory.SelectedValue.ToString();
 			this.DialogResult = DialogResult.OK;
 		}
 
@@ -459,8 +561,8 @@ namespace Chummer
 				}
 				try
 				{
-					xprAvail = nav.Compile(strAvailExpr.Replace("Rating", nudRating.Value.ToString()));
-					lblAvail.Text = (Convert.ToInt32(nav.Evaluate(xprAvail))).ToString() + strAvail;
+					xprAvail = nav.Compile(strAvailExpr.Replace("Rating", Math.Max(nudRating.Value,1).ToString()));
+					lblAvail.Text = Convert.ToInt32(nav.Evaluate(xprAvail)) + strAvail;
 				}
 				catch
 				{
@@ -523,8 +625,13 @@ namespace Chummer
 					// Apply any markup.
 					double dblCost = Convert.ToDouble(intCost, GlobalOptions.Instance.CultureInfo);
 					dblCost *= 1 + (Convert.ToDouble(nudMarkup.Value, GlobalOptions.Instance.CultureInfo) / 100.0);
-					intCost = Convert.ToInt32(dblCost);
+					
+					if (chkBlackMarketDiscount.Checked)
+					{
+						dblCost = dblCost - (dblCost*0.90);
+					}
 
+					intCost = Convert.ToInt32(dblCost);
 					lblCost.Text = String.Format("{0:###,###,##0¥}", intCost);
 
 					intItemCost = intCost;

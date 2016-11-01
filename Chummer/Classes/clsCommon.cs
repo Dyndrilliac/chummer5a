@@ -1,4 +1,4 @@
-/*  This file is part of Chummer5a.
+﻿/*  This file is part of Chummer5a.
  *
  *  Chummer5a is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,17 +16,14 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
-﻿using System;
+ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Text;
-using System.Xml;
-using System.Windows.Forms;
-using Microsoft.Win32;
-using System.Drawing;
-using System.Web;
+ using System.Text;
+ using System.Windows.Forms;
+ using System.Drawing;
+ using System.Linq;
+ using Chummer.Backend.Equipment;
 
 namespace Chummer
 {
@@ -535,6 +532,21 @@ namespace Chummer
 		}
 
 		/// <summary>
+		/// Locate a LifestyleQuality within the character's Lifestyles.
+		/// </summary>
+		/// <param name="strGuid">InternalId of the Lifestyle Quality to find.</param>
+		/// <param name="lstLifestyleQualities">List of Lifestyle Qualities to search.</param>
+		public LifestyleQuality FindLifestyleQuality(string strGuid, List<LifestyleQuality> lstLifestyleQualities)
+		{
+			foreach (LifestyleQuality objLifestyleQuality in lstLifestyleQualities)
+			{
+				if (objLifestyleQuality.InternalId == strGuid)
+					return objLifestyleQuality;
+			}
+
+			return null;
+		}
+		/// <summary>
 		/// Locate a piece of Cyberware within the character's Cyberware.
 		/// </summary>
 		/// <param name="strGuid">InternalId of the Cyberware to find.</param>
@@ -906,7 +918,16 @@ namespace Chummer
 						lstRemoveFoci.Add(objFocus);
 				}
 				foreach (Focus objFocus in lstRemoveFoci)
+				{
+					foreach (Power objPower in _objCharacter.Powers)
+					{
+						if (objPower.BonusSource == objFocus.GearId)
+						{
+							objPower.FreeLevels -= (objFocus.Rating / 4);
+						}
+					}
 					_objCharacter.Foci.Remove(objFocus);
+				}
 			}
 
 			// If a Stacked Focus is being removed, make sure the Stacked Foci and its bonuses are being removed.
@@ -1235,12 +1256,13 @@ namespace Chummer
 		/// <param name="cmsWeapon">ContextMenuStrip for the Weapon Node.</param>
 		/// <param name="cmsWeaponAccessory">ContextMenuStrip for Vehicle Accessory Nodes.</param>
 		/// <param name="cmsWeaponAccessoryGear">ContextMenuStrip for Vehicle Weapon Accessory Gear Nodes.</param>
-		public void CreateWeaponTreeNode(Weapon objWeapon, TreeNode objWeaponsNode, ContextMenuStrip cmsWeapon, ContextMenuStrip cmsWeaponAccessory, ContextMenuStrip cmsWeaponAccessoryGear)
+		/// <param name="WeaponID">The weapon </param>
+		public void CreateWeaponTreeNode(Weapon objWeapon, TreeNode objWeaponsNode, ContextMenuStrip cmsWeapon, ContextMenuStrip cmsWeaponAccessory, ContextMenuStrip cmsWeaponAccessoryGear, string WeaponID = null)
 		{
 			TreeNode objNode = new TreeNode();
 			objNode.Text = objWeapon.DisplayName;
-			objNode.Tag = objWeapon.InternalId;
-			if (objWeapon.Cyberware || objWeapon.Category == "Gear" || objWeapon.Category.StartsWith("Quality"))
+			objNode.Tag = WeaponID ?? objWeapon.InternalId;
+			if (objWeapon.Cyberware || objWeapon.Category == "Gear" || objWeapon.Category.StartsWith("Quality") || WeaponID != null)
 				objNode.ForeColor = SystemColors.GrayText;
 			if (objWeapon.Notes != string.Empty)
 				objNode.ForeColor = Color.SaddleBrown;
@@ -1311,16 +1333,19 @@ namespace Chummer
 		/// <param name="strSource">Book coode and page number to open.</param>
 		public void OpenPDF(string strSource)
 		{
+			// The user must have specified the arguments of their PDF application in order to use this functionality.
+			if (string.IsNullOrWhiteSpace(GlobalOptions.Instance.PDFParameters))
+				return;
+
 			string[] strTemp = strSource.Split(' ');
 			string strBook = "";
-			string strPage = "";
-			string strPath = "";
+			Uri uriPath = null;
 			int intPage = 0;
 
 			try
 			{
 				strBook = strTemp[0];
-				strPage = strTemp[1];
+				string strPage = strTemp[1];
 
 				// Make sure the page is actually a number that we can use as well as being 1 or higher.
 				if (Convert.ToInt32(strPage) < 1)
@@ -1336,61 +1361,27 @@ namespace Chummer
 			if (_objCharacter != null)
 				strBook = _objCharacter.Options.BookFromAltCode(strBook);
 
-            XmlDocument objXmlBookDoc = XmlManager.Instance.Load("books.xml");
-            XmlNode objXmlBook = objXmlBookDoc.SelectSingleNode("/chummer/books/book[code = \"" + strBook + "\"]");
-            string strURL = "";
-            try
-            {
-                strURL = objXmlBook["url"].InnerText;
-            }
-            catch
-            {
-            }
-
 			// Retrieve the sourcebook information including page offset and PDF application name.
 			bool blnFound = false;
-			foreach (SourcebookInfo objInfo in GlobalOptions.Instance.SourcebookInfo)
+			foreach (SourcebookInfo objInfo in GlobalOptions.Instance.SourcebookInfo.Where(objInfo => objInfo.Code == strBook).Where(objInfo => objInfo.Path != string.Empty))
 			{
-				if (objInfo.Code == strBook)
-				{
-					if (objInfo.Path != string.Empty)
-					{
-						blnFound = true;
-						strPath = objInfo.Path;
-						intPage += objInfo.Offset;
-					}
-				}
+				blnFound = true;
+				uriPath = new Uri(objInfo.Path);
+				intPage += objInfo.Offset;
 			}
 
-            if (strURL.Length > 0)
-            {
-                Process.Start(strURL);
-            }
-            else
-            {
-                // The user must have specified the path of their PDF application in order to use this functionality.
-                if (GlobalOptions.Instance.PDFAppPath == string.Empty)
-                    return;
+			// If the sourcebook was not found, we can't open anything.
+            if (!blnFound)
+				return;
 
-                // If the sourcebook was not found, we can't open anything.
-                if (!blnFound)
-                    return;
-
-                // Open the PDF.
-                // acrord32 /A "page=123" "D:\foo\bar.pdf"
-                //string strFilePath = "C:\\Gaming\\Shadowrun\\Books\\Shadowrun 4th ed Anniverary.pdf";
-                if (GlobalOptions._blnOpenPDFsAsURLs)
-                {
-                    var uri = new System.Uri(strPath, UriKind.Absolute);
-                    string strParams = "\"" + uri + "#page=" + intPage.ToString() + "\"";
-                    Process.Start(GlobalOptions.Instance.URLAppPath, strParams);
-                }
-                else
-                {
-                    string strParams = " /n /A \"page=" + intPage.ToString() + "\" \"" + strPath + "\"";
-                    Process.Start(GlobalOptions.Instance.PDFAppPath, strParams);
-                }
-            }
+			string strParams = GlobalOptions.Instance.PDFParameters;
+			strParams = strParams.Replace("{page}", intPage.ToString());
+			strParams = strParams.Replace("{localpath}", uriPath.LocalPath);
+			strParams = strParams.Replace("{absolutepath}", uriPath.AbsolutePath);
+			ProcessStartInfo objProgress = new ProcessStartInfo();
+			objProgress.FileName = GlobalOptions.Instance.PDFAppPath;
+			objProgress.Arguments = strParams;
+			Process.Start(objProgress);
 		}
 		#endregion
 
